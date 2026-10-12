@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Fotitos</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafafa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .main-container {
+            width: 380px;
+        }
+        .card {
+            background: white;
+            border: 1px solid #dbdbdb;
+            padding: 30px;
+            text-align: center;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-family: cursive;
+            margin-bottom: 5px;
+            font-size: 34px;
+            color: #262626;
+        }
+        p.subtitle {
+            color: #8e8e8e;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 18px;
+            margin-bottom: 20px;
+        }
+        form p {
+            text-align: left;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #262626;
+        }
+        form label {
+            display: block;
+            margin-bottom: 3px;
+            color: #8e8e8e;
+            font-size: 12px;
+        }
+        form input {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #dbdbdb;
+            background: #fafafa;
+            border-radius: 3px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .toggle-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #0095f6;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        form ul.errorlist {
+            color: #ed4956;
+            font-size: 11px;
+            list-style: none;
+            padding: 0;
+            margin: 2px 0;
+        }
+        form .helptext {
+            font-size: 11px;
+            color: #8e8e8e;
+            display: block;
+            margin-top: 2px;
+        }
+        button[type="submit"] {
+            background: #0095f6;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        button[type="submit"]:hover {
+            background: #1877f2;
+        }
+        .footer-card {
+            background: white;
+            border: 1px solid #dbdbdb;
+            padding: 20px;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .footer-card a {
+            color: #0095f6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="card">
+            <h1>Fotitos</h1>
+            <p class="subtitle">Regístrate para ver fotos y momentos de tus amigos.</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <p style="color: #0095f6; font-size: 13px; font-weight: bold;">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Registrarse</button>
+            </form>
+        </div>
+
+        <div class="footer-card">
+            ¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
+        </div>
+    </div>
+
+    <script>
+        // Añade automáticamente la funcionalidad de mostrar/ocultar a los campos de contraseña en el registro
+        document.addEventListener("DOMContentLoaded", function() {
+            const passwordInputs = document.querySelectorAll('input[id*="password"]');
+            passwordInputs.forEach((input, index) => {
+                input.style.paddingRight = "65px"; // espacio para el botón
+                const wrapper = document.createElement("div");
+                wrapper.style.position = "relative";
+                input.parentNode.insertBefore(wrapper, input);
+                wrapper.appendChild(input);
+
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "toggle-btn";
+                btn.innerText = "Mostrar";
+                btn.onclick = function() {
+                    if (input.type === "password") {
+                        input.type = "text";
+                        btn.innerText = "Ocultar";
+                    } else {
+                        input.type = "password";
+                        btn.innerText = "Mostrar";
+                    }
+                };
+                wrapper.appendChild(btn);
+            });
+        });
+    </script>
+</body>
+</html>
