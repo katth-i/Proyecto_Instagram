@@ -4,103 +4,20 @@
     <meta charset="UTF-8">
     <title>Iniciar Sesión - Fotitos</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #fafafa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .main-container {
-            width: 350px;
-        }
-        .card {
-            background: white;
-            border: 1px solid #dbdbdb;
-            padding: 40px;
-            text-align: center;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        h1 {
-            font-family: cursive;
-            margin-bottom: 30px;
-            font-size: 36px;
-            color: #262626;
-        }
-        .input-group {
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        .input-group label {
-            font-size: 12px;
-            color: #8e8e8e;
-            display: block;
-            margin-bottom: 3px;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dbdbdb;
-            background: #fafafa;
-            border-radius: 3px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        .password-container {
-            position: relative;
-            width: 100%;
-        }
-        .toggle-btn {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #0095f6;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        button[type="submit"] {
-            background: #0095f6;
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        button[type="submit"]:hover {
-            background: #1877f2;
-        }
-        .footer-card {
-            background: white;
-            border: 1px solid #dbdbdb;
-            padding: 20px;
-            text-align: center;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .footer-card a {
-            color: #0095f6;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .errorlist {
-            color: #ed4956;
-            font-size: 12px;
-            text-align: left;
-            padding-left: 0;
-            list-style: none;
-            margin-bottom: 10px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #fafafa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .main-container { width: 350px; }
+        .card { background: white; border: 1px solid #dbdbdb; padding: 40px; text-align: center; border-radius: 4px; margin-bottom: 10px; }
+        h1 { font-family: cursive; margin-bottom: 30px; font-size: 36px; color: #262626; }
+        .input-group { text-align: left; margin-bottom: 10px; }
+        .input-group label { font-size: 12px; color: #8e8e8e; display: block; margin-bottom: 3px; }
+        input { width: 100%; padding: 10px; border: 1px solid #dbdbdb; background: #fafafa; border-radius: 3px; box-sizing: border-box; font-size: 14px; }
+        .password-container { position: relative; width: 100%; }
+        .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0095f6; font-weight: bold; cursor: pointer; font-size: 12px; }
+        button[type="submit"] { background: #0095f6; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; font-size: 14px; }
+        button[type="submit"]:hover { background: #1877f2; }
+        .footer-card { background: white; border: 1px solid #dbdbdb; padding: 20px; text-align: center; border-radius: 4px; font-size: 14px; }
+        .footer-card a { color: #0095f6; text-decoration: none; font-weight: bold; }
+        .errorlist { color: #ed4956; font-size: 12px; list-style: none; padding: 0; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -108,30 +25,35 @@
         <div class="card">
             <h1>Fotitos</h1>
             
-            {% if form.errors %}
+            {% if messages %}
                 <ul class="errorlist">
-                    <li>Usuario o contraseña incorrectos. Por favor, intenta de nuevo.</li>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
                 </ul>
             {% endif %}
 
             <form method="POST">
                 {% csrf_token %}
-                
                 <div class="input-group">
-                    <label>Nombre de usuario</label>
-                    {{ form.username }}
+                    <label>Usuario, Correo o Teléfono</label>
+                    <input type="text" name="username" required>
                 </div>
                 
                 <div class="input-group">
                     <label>Contraseña</label>
                     <div class="password-container">
-                        {{ form.password }}
+                        <input type="password" name="password" id="id_password" required>
                         <button type="button" class="toggle-btn" id="togglePasswordBtn" onclick="togglePassword()">Mostrar</button>
                     </div>
                 </div>
 
                 <button type="submit">Iniciar Sesión</button>
             </form>
+            
+            <p style="margin-top: 15px; font-size: 12px;">
+                <a href="{% url 'password_reset' %}" style="color: #00376b; text-decoration: none;">¿Olvidaste tu contraseña?</a>
+            </p>
         </div>
 
         <div class="footer-card">
@@ -141,7 +63,7 @@
 
     <script>
         function togglePassword() {
-            const passwordInput = document.querySelector('input[name="password"]');
+            const passwordInput = document.getElementById('id_password');
             const btn = document.getElementById('togglePasswordBtn');
             if (passwordInput.type === "password") {
                 passwordInput.type = "text";
