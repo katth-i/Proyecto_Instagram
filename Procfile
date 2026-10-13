@@ -1,0 +1,1 @@
+web: gunicorn config.wsgipip install gunicorn
