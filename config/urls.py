@@ -15,4 +15,3 @@ urlpatterns = [
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name='cuentas/password_reset_complete.html'), name='password_reset_complete'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
-

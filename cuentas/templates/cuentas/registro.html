@@ -12,6 +12,8 @@
         form p { text-align: left; margin-bottom: 10px; font-size: 13px; color: #262626; }
         form label { display: block; margin-bottom: 2px; color: #8e8e8e; font-size: 11px; }
         form input { width: 100%; padding: 8px; border: 1px solid #dbdbdb; background: #fafafa; border-radius: 3px; box-sizing: border-box; font-size: 13px; }
+        /* Ajuste específico para que el checkbox no ocupe el 100% de ancho */
+        form input[type="checkbox"] { width: auto; display: inline-block; margin-right: 5px; }
         form ul.errorlist { color: #ed4956; font-size: 11px; list-style: none; padding: 0; margin: 2px 0; }
         button[type="submit"] { background: #0095f6; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; font-size: 14px; }
         button[type="submit"]:hover { background: #1877f2; }
@@ -21,20 +23,46 @@
     
     <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // 1. Restricción de fecha de nacimiento
         const fechaInput = document.querySelector('input[type="date"]');
         if (fechaInput) {
             const hoy = new Date();
-            
-            // Fecha máxima: Hoy (para que nadie elija fechas del futuro)
             fechaInput.max = hoy.toISOString().split("T")[0];
-
-            // Fecha mínima: Hace 100 años (para evitar años absurdos como 1800)
             const minFecha = new Date(hoy.getFullYear() - 100, hoy.getMonth(), hoy.getDate());
             fechaInput.min = minFecha.toISOString().split("T")[0];
         }
-    });
-</script>
 
+        // 2. Funcionalidad de Mostrar/Ocultar Contraseña
+        const passwordInputs = document.querySelectorAll("input[type='password']");
+        if (passwordInputs.length > 0) {
+            const container = document.createElement("div");
+            container.style.marginTop = "10px";
+            container.style.marginBottom = "10px";
+            container.style.textAlign = "left";
+            container.innerHTML = `
+                <input type="checkbox" id="show-password" style="cursor: pointer;">
+                <label for="show-password" style="font-size: 12px; color: #8e8e8e; cursor: pointer; display: inline;">Mostrar contraseña</label>
+            `;
+            
+            const form = document.querySelector("form");
+            const submitBtn = form ? form.querySelector("button[type='submit']") : null;
+            
+            if (form && submitBtn) {
+                form.insertBefore(container, submitBtn);
+            } else if (form) {
+                form.appendChild(container);
+            }
+
+            const checkbox = document.getElementById("show-password");
+            checkbox.addEventListener("change", function() {
+                const tipo = checkbox.checked ? "text" : "password";
+                passwordInputs.forEach(input => {
+                    input.type = tipo;
+                });
+            });
+        }
+    });
+    </script>
 </head>
 
 <body>
