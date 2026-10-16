@@ -2,79 +2,33 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Fotitos - En Construcción</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #fafafa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #262626;
-        }
-        .construction-card {
-            background: white;
-            border: 1px solid #dbdbdb;
-            padding: 50px 40px;
-            text-align: center;
-            border-radius: 8px;
-            width: 400px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        h1 {
-            font-family: cursive;
-            color: #0095f6;
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        .badge {
-            background-color: #efefef;
-            color: #262626;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 20px;
-            letter-spacing: 0.5px;
-        }
-        p {
-            color: #8e8e8e;
-            font-size: 14px;
-            line-height: 22px;
-            margin-bottom: 30px;
-        }
-        .logout-btn {
-            background: #ed4956;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        .logout-btn:hover {
-            background: #c93843;
-        }
-    </style>
+    <title>Fotitos - Página Principal</title>
 </head>
-<body>
-    <div class="construction-card">
-        <h1>Fotitos</h1>
-        <div class="badge">🚀 MÓDULO EN CONSTRUCCIÓN</div>
-        
-        <p>¡Hola, <strong>{{ request.user.username }}</strong>! Has iniciado sesión correctamente y tus datos están seguros en la base de datos. Estamos construyendo el feed de publicaciones estilo Instagram para ti.</p>
+<body style="margin: 0; font-family: Arial, sans-serif;">
 
-        <!-- Formulario o enlace para cerrar sesión de forma segura en Django -->
-        <form action="{% url 'login' %}" method="get">
-            <button type="submit" class="logout-btn">Cerrar Sesión</button>
-        </form>
+    <!-- ESQUINA SUPERIOR: Perfil y Cerrar/Iniciar sesión -->
+    <div style="position: absolute; top: 15px; right: 20px; background: rgba(255, 255, 255, 0.9); padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;">
+        {% if user.is_authenticated %}
+            <!-- Si ya inició sesión, muestra su nombre y el botón de salir -->
+            <span style="margin-right: 10px;">👤 <strong>{{ user.username }}</strong></span>
+            
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                    Cerrar sesión
+                </button>
+            </form>
+        {% else %}
+            <!-- Si no ha iniciado sesión, muestra el enlace para entrar -->
+            <a href="{% url 'login' %}" style="text-decoration: none; color: #007bff; font-weight: bold;">Iniciar sesión</a>
+        {% endif %}
     </div>
+
+    <!-- EL RESTO DE TU PÁGINA PRINCIPAL (Tus publicaciones, fotos, etc.) -->
+    <div style="padding: 40px;">
+        <h1>¡Bienvenido a Fotitos! 📸</h1>
+        <p>Aquí va el muro con las fotos de la comunidad escolar.</p>
+    </div>
+
 </body>
 </html>
