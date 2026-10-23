@@ -1,0 +1,17 @@
+# Archivos temporales de Python (se crean solos al encender el servidor)
+__pycache__/
+*.pyc
+
+# Entornos virtuales de Python
+.venv/
+venv/
+env/
+
+# Archivos generados por Django
+staticfiles/
+media/
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+.vscode/
