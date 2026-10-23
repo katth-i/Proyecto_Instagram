@@ -9,11 +9,14 @@
         <article class="tarjeta">
             <div class="tarjeta-header">
                 <i class="bi bi-person-circle"></i>
-                <strong>{{ publicacion.usuario.username }}</strong>
-                <span class="tiempo">• {{ publicacion.fecha|timesince }}</span>
+                <!-- CORREGIDO: publicacion.user en vez de publicacion.usuario -->
+                <strong>{{ publicacion.user.username }}</strong>
+                
+                <!-- CORREGIDO: Asegúrate que el campo de fecha en tu modelo se llame 'fecha' o cámbialo -->
+                <span class="tiempo">{{ publicacion.fecha|timesince }}</span>
             </div>
 
-            <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.usuario.username }}">
+            <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}">
 
             <div class="acciones">
                 <i class="bi bi-heart"></i>
@@ -23,7 +26,8 @@
             </div>
 
             <p class="descripcion">
-                <strong>{{ publicacion.usuario.username }}</strong> {{ publicacion.descripcion }}
+                <!-- CORREGIDO: publicacion.user y verifica si tu campo es 'descripcion' o 'texto' -->
+                <strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion }}
             </p>
         </article>
     {% empty %}
@@ -37,16 +41,16 @@
 </div>
 
 <style>
-    .muro { width: 100%; max-width: 470px; }
+    .muro { width: 100%; max-width: 470px; margin: 0 auto; }
     .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 12px 16px 16px; margin-bottom: 24px; }
     .tarjeta-header { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; }
     .tarjeta-header i { font-size: 32px; color: var(--rosa); }
-    .tiempo { color: var(--texto-suave); font-size: 14px; }
-    .tarjeta img { width: 100%; border-radius: 10px; display: block; }
+    .tiempo { color: var(--texto-suave); font-size: 14px; margin-left: auto; }
+    .tarjeta img { width: 100%; border-radius: 10px; display: block; margin-top: 8px; }
     .acciones { display: flex; gap: 16px; font-size: 24px; padding: 12px 0 6px; }
     .acciones i { cursor: pointer; }
     .acciones i:hover { color: var(--rosa); }
-    .acciones .guardar { margin-left: auto; }   /* empuja el guardar a la derecha */
+    .acciones .guardar { margin-left: auto; }
     .descripcion { margin: 4px 0; font-size: 14px; }
     .vacio { text-align: center; color: var(--texto-suave); margin-top: 80px; }
     .vacio i { font-size: 70px; color: var(--rosa); }
