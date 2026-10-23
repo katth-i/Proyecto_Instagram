@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Fotitos{% endblock %}</title>
+    <!-- Íconos (como los de Instagram) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Letra del logo -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+    <style>
+/* --- Paleta de colores: cambiando aquí, cambia toda la página --- */
+:root {
+    --fondo: #fff7fa;          /* rosado casi blanco */
+    --tarjeta: #ffffff;        /* blanco */
+    --rosa-suave: #ffe4ee;     /* rosado clarito para hover y bordes */
+    --borde: #f6cfdd;          /* borde rosado */
+    --rosa: #e75480;           /* rosado fuerte para botones */
+    --rosa-oscuro: #c93d68;    /* rosado al pasar el mouse */
+    --texto: #4a2b3a;          /* texto: ciruela oscuro */
+    --texto-suave: #a07a8b;    /* texto secundario */
+    --rojo: #e0455f;           /* botón de cerrar sesión */
+}
+
+* { box-sizing: border-box; }
+button, textarea { font-family: inherit; }  /* los botones usan la misma letra que la página */
+
+body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+}
+
+/* --- Columna izquierda: FIJA --- */
+.sidebar {
+    position: fixed;          /* no se mueve al hacer scroll */
+    top: 0; left: 0;
+    width: 245px;
+    height: 100vh;            /* toda la altura de la pantalla */
+    padding: 25px 12px;
+    background: var(--tarjeta);
+    border-right: 1px solid var(--borde);
+    display: flex;
+    flex-direction: column;   /* elementos uno debajo de otro */
+}
+
+.logo { font-family: 'Pacifico', cursive; font-weight: normal; font-size: 30px; margin: 0 12px 30px; color: var(--rosa); }
+
+.menu { list-style: none; padding: 0; margin: 0; flex: 1; } /* flex:1 empuja al usuario hacia abajo */
+
+.menu a {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px; margin-bottom: 4px;
+    color: var(--texto); text-decoration: none; font-size: 16px;
+    border-radius: 10px;
+}
+.menu a:hover { background: var(--rosa-suave); color: var(--rosa-oscuro); }
+.menu i { font-size: 24px; }
+
+.usuario { padding: 12px; border-top: 1px solid var(--borde); }
+.usuario span { display: block; margin-bottom: 10px; font-weight: bold; }
+.btn-salir {
+    width: 100%; padding: 8px;
+    background: var(--rojo); color: #fff;
+    border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+}
+.btn-salir:hover { background: #c4344d; }
+
+/* --- Columna central --- */
+.contenido {
+    margin-left: 245px;       /* deja espacio para el menú fijo */
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;  /* centra el muro */
+}
+    </style>
+</head>
+<body>
+
+    <!-- ===== MENÚ LATERAL ===== -->
+    <nav class="sidebar">
+        <h1 class="logo">Fotitos</h1>
+
+        <ul class="menu">
+            <li><a href="{% url 'inicio' %}"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
+            <li><a href="#"><i class="bi bi-search"></i> Búsqueda</a></li>
+            <li><a href="#"><i class="bi bi-send"></i> Mensajes</a></li>
+            <li><a href="#"><i class="bi bi-heart"></i> Notificaciones</a></li>
+            <li><a href="{% url 'crear' %}"><i class="bi bi-plus-square"></i> Crear</a></li>
+            <li><a href="#"><i class="bi bi-person-circle"></i> Perfil</a></li>
+        </ul>
+
+        <!-- Parte inferior: usuario + cerrar sesión -->
+        <div class="usuario">
+            <span><i class="bi bi-person-circle"></i> {{ user.username }}</span>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-salir">Cerrar sesión</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- ===== CONTENIDO PRINCIPAL ===== -->
+    <main class="contenido">
+        {% block contenido %}{% endblock %}
+    </main>
+
+</body>
+</html>

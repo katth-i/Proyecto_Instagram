@@ -58,3 +58,7 @@ def login_view(request):
             messages.error(request, 'Credenciales incorrectas. Verifica tus datos e intenta de nuevo.')
 
     return render(request, 'cuentas/login.html')
+
+@login_required(login_url='login')
+def crear(request):
+    return render(request, 'cuentas/crear.html')

@@ -1,34 +1,56 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Fotitos - Página Principal</title>
-</head>
-<body style="margin: 0; font-family: Arial, sans-serif;">
+{% extends 'cuentas/base.html' %}
 
-    <!-- ESQUINA SUPERIOR: Perfil y Cerrar/Iniciar sesión -->
-    <div style="position: absolute; top: 15px; right: 20px; background: rgba(255, 255, 255, 0.9); padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;">
-        {% if user.is_authenticated %}
-            <!-- Si ya inició sesión, muestra su nombre y el botón de salir -->
-            <span style="margin-right: 10px;">👤 <strong>{{ user.username }}</strong></span>
-            
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                    Cerrar sesión
-                </button>
-            </form>
-        {% else %}
-            <!-- Si no ha iniciado sesión, muestra el enlace para entrar -->
-            <a href="{% url 'login' %}" style="text-decoration: none; color: #007bff; font-weight: bold;">Iniciar sesión</a>
-        {% endif %}
-    </div>
+{% block titulo %}Inicio - Fotitos{% endblock %}
 
-    <!-- EL RESTO DE TU PÁGINA PRINCIPAL (Tus publicaciones, fotos, etc.) -->
-    <div style="padding: 40px;">
-        <h1>¡Bienvenido a Fotitos! 📸</h1>
-    
-    </div>
+{% block contenido %}
+<div class="muro">
 
-</body>
-</html>
+    {% for publicacion in publicaciones %}
+        <article class="tarjeta">
+            <div class="tarjeta-header">
+                <i class="bi bi-person-circle"></i>
+                <strong>{{ publicacion.usuario.username }}</strong>
+                <span class="tiempo">• {{ publicacion.fecha|timesince }}</span>
+            </div>
+
+            <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.usuario.username }}">
+
+            <div class="acciones">
+                <i class="bi bi-heart"></i>
+                <i class="bi bi-chat"></i>
+                <i class="bi bi-send"></i>
+                <i class="bi bi-bookmark guardar"></i>
+            </div>
+
+            <p class="descripcion">
+                <strong>{{ publicacion.usuario.username }}</strong> {{ publicacion.descripcion }}
+            </p>
+        </article>
+    {% empty %}
+        <div class="vacio">
+            <i class="bi bi-camera"></i>
+            <h2>¡Bienvenido a Fotitos! 📸</h2>
+            <p>Todavía no hay publicaciones. <a href="{% url 'crear' %}">Crea la primera</a>.</p>
+        </div>
+    {% endfor %}
+
+</div>
+
+<style>
+    .muro { width: 100%; max-width: 470px; }
+    .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 12px 16px 16px; margin-bottom: 24px; }
+    .tarjeta-header { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; }
+    .tarjeta-header i { font-size: 32px; color: var(--rosa); }
+    .tiempo { color: var(--texto-suave); font-size: 14px; }
+    .tarjeta img { width: 100%; border-radius: 10px; display: block; }
+    .acciones { display: flex; gap: 16px; font-size: 24px; padding: 12px 0 6px; }
+    .acciones i { cursor: pointer; }
+    .acciones i:hover { color: var(--rosa); }
+    .acciones .guardar { margin-left: auto; }   /* empuja el guardar a la derecha */
+    .descripcion { margin: 4px 0; font-size: 14px; }
+    .vacio { text-align: center; color: var(--texto-suave); margin-top: 80px; }
+    .vacio i { font-size: 70px; color: var(--rosa); }
+    .vacio h2 { color: var(--texto); }
+    .vacio a { color: var(--rosa); font-weight: bold; }
+</style>
+{% endblock %}

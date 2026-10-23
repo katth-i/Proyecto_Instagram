@@ -1,0 +1,64 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Crear publicación - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="crear-card">
+    <h2>Crear nueva publicación</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Zona para subir la foto -->
+        <label for="imagen" class="zona-foto">
+            <img id="vista-previa" alt="">
+            <div id="texto-foto">
+                <i class="bi bi-images"></i>
+                <p>Haz clic para seleccionar una foto</p>
+            </div>
+        </label>
+        <input type="file" id="imagen" name="imagen" accept="image/*" required hidden>
+
+        <textarea name="descripcion" rows="4" placeholder="Escribe una descripción..."></textarea>
+
+        <button type="submit" class="btn-publicar">Publicar</button>
+    </form>
+</div>
+
+<style>
+    .crear-card { width: 100%; max-width: 500px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(231, 84, 128, 0.08); }
+    .crear-card h2 { text-align: center; margin-top: 0; color: var(--rosa-oscuro); }
+    .zona-foto {
+        display: flex; align-items: center; justify-content: center;
+        height: 350px; background: var(--fondo); border: 2px dashed var(--borde); border-radius: 12px;
+        cursor: pointer; overflow: hidden; text-align: center; color: var(--texto-suave);
+    }
+    .zona-foto:hover { border-color: var(--rosa); background: var(--rosa-suave); }
+    .zona-foto i { font-size: 60px; color: var(--rosa); }
+    #vista-previa { display: none; width: 100%; height: 100%; object-fit: cover; }
+    textarea {
+        width: 100%; margin-top: 16px; padding: 12px;
+        background: var(--fondo); color: var(--texto); border: 1px solid var(--borde);
+        border-radius: 10px; font-family: inherit; font-size: 15px; resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: var(--rosa); }
+    .btn-publicar {
+        width: 100%; margin-top: 16px; padding: 12px;
+        background: var(--rosa); color: #fff; border: none; border-radius: 10px;
+        font-size: 16px; font-weight: bold; cursor: pointer;
+    }
+    .btn-publicar:hover { background: var(--rosa-oscuro); }
+</style>
+
+<script>
+    // Muestra la foto elegida dentro del recuadro
+    document.getElementById('imagen').addEventListener('change', function () {
+        const archivo = this.files[0];
+        if (!archivo) return;
+        const img = document.getElementById('vista-previa');
+        img.src = URL.createObjectURL(archivo);
+        img.style.display = 'block';
+        document.getElementById('texto-foto').style.display = 'none';
+    });
+</script>
+{% endblock %}

@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Registro - Fotitos</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #fafafa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #fff7fa; color: #4a2b3a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; box-sizing: border-box; }
         .main-container { width: 380px; }
-        .card { background: white; border: 1px solid #dbdbdb; padding: 30px; text-align: center; border-radius: 4px; margin-bottom: 10px; }
-        h1 { font-family: cursive; margin-bottom: 5px; font-size: 34px; color: #262626; }
-        p.subtitle { color: #8e8e8e; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
-        form p { text-align: left; margin-bottom: 10px; font-size: 13px; color: #262626; }
-        form label { display: block; margin-bottom: 2px; color: #8e8e8e; font-size: 11px; }
-        form input { width: 100%; padding: 8px; border: 1px solid #dbdbdb; background: #fafafa; border-radius: 3px; box-sizing: border-box; font-size: 13px; }
+        .card { background: white; border: 1px solid #f6cfdd; padding: 30px; text-align: center; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(231, 84, 128, 0.08); }
+        h1 { font-family: 'Pacifico', cursive; font-weight: normal; margin: 0 0 5px; font-size: 36px; color: #e75480; }
+        p.subtitle { color: #a07a8b; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        form p { text-align: left; margin-bottom: 10px; font-size: 13px; color: #4a2b3a; }
+        form label { display: block; margin-bottom: 2px; color: #a07a8b; font-size: 11px; }
+        form input { width: 100%; padding: 8px; border: 1px solid #f6cfdd; background: #fff7fa; color: #4a2b3a; border-radius: 8px; box-sizing: border-box; font-size: 13px; }
+        form input:focus { outline: none; border-color: #e75480; }
         /* Ajuste específico para que el checkbox no ocupe el 100% de ancho */
-        form input[type="checkbox"] { width: auto; display: inline-block; margin-right: 5px; }
-        form ul.errorlist { color: #ed4956; font-size: 11px; list-style: none; padding: 0; margin: 2px 0; }
-        button[type="submit"] { background: #0095f6; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; font-size: 14px; }
-        button[type="submit"]:hover { background: #1877f2; }
-        .footer-card { background: white; border: 1px solid #dbdbdb; padding: 15px; text-align: center; border-radius: 4px; font-size: 14px; }
-        .footer-card a { color: #0095f6; text-decoration: none; font-weight: bold; }
+        form input[type="checkbox"] { width: auto; display: inline-block; margin-right: 5px; accent-color: #e75480; }
+        form ul.errorlist { color: #e0455f; font-size: 11px; list-style: none; padding: 0; margin: 2px 0; }
+        button[type="submit"] { background: #e75480; color: white; border: none; padding: 10px; width: 100%; font-family: inherit; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; font-size: 14px; }
+        button[type="submit"]:hover { background: #c93d68; }
+        .footer-card { background: white; border: 1px solid #f6cfdd; padding: 15px; text-align: center; border-radius: 16px; font-size: 14px; }
+        .footer-card a { color: #e75480; text-decoration: none; font-weight: bold; }
     </style>
     
     <script>
