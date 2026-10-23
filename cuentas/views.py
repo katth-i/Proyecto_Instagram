@@ -75,7 +75,9 @@ def crear_publicacion(request):
             return redirect('inicio')  # Redirigimos al muro principal
     else:
         form = PublicacionForm()
-        return render(request, 'cuentas/crear.html', {'form': form})
+    return render(request, 'cuentas/crear.html', {'form': form})
+
+    
 
 def inicio(request):
     # Obtenemos todas las publicaciones de la base de datos (ordenadas de la más nueva a la más vieja)
