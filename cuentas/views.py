@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegistroForm
 from .models import Perfil
+from .forms import PublicacionForm
+
 
 @login_required(login_url='login')
 def inicio(request):
@@ -59,6 +61,18 @@ def login_view(request):
 
     return render(request, 'cuentas/login.html')
 
-@login_required(login_url='login')
-def crear(request):
-    return render(request, 'cuentas/crear.html')
+@login_required
+def crear_publicacion(request):
+    if request.method == 'POST':
+        # Recibimos los datos de texto y los archivos (imágenes) que mandó el usuario
+        form = PublicacionForm(request.POST, request.FILES)
+        if form.is_valid():
+            # commit=False nos permite detener el guardado un segundo para asignarle el usuario actual
+            publicacion = form.save(commit=False)
+            publicacion.user = request.user  # Asignamos la foto al usuario que ha iniciado sesión
+            publicacion.save()  # Ahora sí guardamos en la base de datos
+            return redirect('inicio')  # Redirigimos al muro principal
+    else:
+        form = PublicacionForm()
+
+    return render(request, 'cuentas/crear_publicacion.html', {'form': form})

@@ -8,3 +8,19 @@ class Perfil(models.Model):
 
     def __str__(self):
         return self.user.username
+    
+class Publicacion(models.Model):
+    # Relaciona la foto con el usuario que la subió
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    # Campo para subir la imagen (se guardará en una carpeta llamada 'publicaciones/')
+    imagen = models.ImageField(upload_to='publicaciones/')
+    
+    # Descripción o pie de foto opcional
+    descripcion = models.TextField(blank=True, null=True)
+    
+    # Fecha y hora automática de cuándo se creó
+    creado_el = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.creado_el.strftime('%d/%m/%Y')}" 

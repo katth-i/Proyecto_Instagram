@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Perfil
 from datetime import date
+from .models import Publicacion
 
 class RegistroForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, required=True, label="Nombre")
@@ -90,3 +91,8 @@ class RegistroForm(forms.ModelForm):
                 fecha_nacimiento=self.cleaned_data["fecha_nacimiento"]
             )
         return user
+
+class PublicacionForm(forms.ModelForm):
+    class Meta:
+        model = Publicacion
+        fields = ['imagen', 'descripcion']  # Los dos campos que el usuario va a rellenar
