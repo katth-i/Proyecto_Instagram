@@ -11,15 +11,15 @@
     <style>
 /* --- Paleta de colores: cambiando aquí, cambia toda la página --- */
 :root {
-    --fondo: #fff7fa;          /* rosado casi blanco */
-    --tarjeta: #ffffff;        /* blanco */
-    --rosa-suave: #ffe4ee;     /* rosado clarito para hover y bordes */
-    --borde: #f6cfdd;          /* borde rosado */
-    --rosa: #e75480;           /* rosado fuerte para botones */
-    --rosa-oscuro: #c93d68;    /* rosado al pasar el mouse */
-    --texto: #4a2b3a;          /* texto: ciruela oscuro */
-    --texto-suave: #a07a8b;    /* texto secundario */
-    --rojo: #e0455f;           /* botón de cerrar sesión */
+    --fondo: #fff7fa;        /* rosado casi blanco */
+    --tarjeta: #ffffff;       /* blanco */
+    --rosa-suave: #ffe4ee;    /* rosado clarito para hover y bordes */
+    --borde: #f6cfdd;         /* borde rosado */
+    --rosa: #e75480;          /* rosado fuerte para botones */
+    --rosa-oscuro: #c93d68;   /* rosado al pasar el mouse */
+    --texto: #4a2b3a;         /* texto: ciruela oscuro */
+    --texto-suave: #a07a8b;   /* texto secundario */
+    --rojo: #e0455f;          /* botón de cerrar sesión */
 }
 
 * { box-sizing: border-box; }
@@ -86,7 +86,16 @@ body {
             <li><a href="{% url 'inicio' %}"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
             <li><a href="#"><i class="bi bi-search"></i> Búsqueda</a></li>
             <li><a href="#"><i class="bi bi-send"></i> Mensajes</a></li>
-            <li><a href="#"><i class="bi bi-heart"></i> Notificaciones</a></li>
+            <li>
+                <a href="{% url 'notificaciones' %}" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <i class="bi bi-heart"></i> Notificaciones
+                    </div>
+                    {% if notificaciones_no_leidas > 0 %}
+                        <span style="background: var(--rojo); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">{{ notificaciones_no_leidas }}</span>
+                    {% endif %}
+                </a>
+            </li>
             <li><a href="{% url 'crear' %}"><i class="bi bi-plus-square"></i> Crear</a></li>
             <li><a href="#"><i class="bi bi-person-circle"></i> Perfil</a></li>
         </ul>

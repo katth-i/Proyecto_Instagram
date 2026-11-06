@@ -4,31 +4,54 @@
 
 {% block contenido %}
 <div class="muro">
-
     {% for publicacion in publicaciones %}
         <article class="tarjeta">
             <div class="tarjeta-header">
                 <i class="bi bi-person-circle"></i>
-                <!-- CORREGIDO: publicacion.user en vez de publicacion.usuario -->
                 <strong>{{ publicacion.user.username }}</strong>
-                
-                <!-- CORREGIDO: Asegúrate que el campo de fecha en tu modelo se llame 'fecha' o cámbialo -->
                 <span class="tiempo">{{ publicacion.fecha|timesince }}</span>
             </div>
 
             <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}">
 
             <div class="acciones">
-                <i class="bi bi-heart"></i>
-                <i class="bi bi-chat"></i>
+                <!-- Botón de Likes -->
+                <a href="{% url 'dar_like' publicacion.id %}" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    {% if request.user in publicacion.likes.all %}
+                        <i class="bi bi-heart-fill" style="color: var(--rosa);"></i>
+                    {% else %}
+                        <i class="bi bi-heart"></i>
+                    {% endif %}
+                    <span class="contador-likes" style="font-size: 18px; font-weight: bold;">{{ publicacion.total_likes }}</span>
+                </a>
+
+                <!-- Botón de Comentarios (con contador y acción de foco) -->
+                <a href="#" onclick="document.getElementById('input-comentario-{{ publicacion.id }}').focus(); return false;" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-chat"></i>
+                    <span style="font-size: 18px; font-weight: bold;">{{ publicacion.comentarios.count }}</span>
+                </a>
+
                 <i class="bi bi-send"></i>
                 <i class="bi bi-bookmark guardar"></i>
             </div>
 
             <p class="descripcion">
-                <!-- CORREGIDO: publicacion.user y verifica si tu campo es 'descripcion' o 'texto' -->
                 <strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion }}
             </p>
+
+            <!-- SECCIÓN DE COMENTARIOS (Con desplazamiento vertical) -->
+            <div class="comentarios-seccion" style="max-height: 120px; overflow-y: auto; margin-top: 10px; font-size: 14px; padding-right: 5px;">
+                {% for comentario in publicacion.comentarios.all %}
+                    <p style="margin: 4px 0;"><strong>{{ comentario.user.username }}</strong> {{ comentario.texto }}</p>
+                {% endfor %}
+            </div>
+
+            <!-- Formulario con ID dinámico para el foco -->
+            <form action="{% url 'agregar_comentario' publicacion.id %}" method="POST" style="display: flex; margin-top: 8px; border-top: 1px solid var(--borde); padding-top: 8px;">
+                {% csrf_token %}
+                <input id="input-comentario-{{ publicacion.id }}" type="text" name="texto" placeholder="Agrega un comentario..." required style="flex-grow: 1; border: none; outline: none; background: transparent; font-size: 14px; color: inherit;">
+                <button type="submit" style="background: none; border: none; color: var(--rosa); font-weight: bold; cursor: pointer;">Publicar</button>
+            </form>
         </article>
     {% empty %}
         <div class="vacio">
@@ -37,7 +60,6 @@
             <p>Todavía no hay publicaciones. <a href="{% url 'crear' %}">Crea la primera</a>.</p>
         </div>
     {% endfor %}
-
 </div>
 
 <style>
@@ -47,7 +69,7 @@
     .tarjeta-header i { font-size: 32px; color: var(--rosa); }
     .tiempo { color: var(--texto-suave); font-size: 14px; margin-left: auto; }
     .tarjeta img { width: 100%; border-radius: 10px; display: block; margin-top: 8px; }
-    .acciones { display: flex; gap: 16px; font-size: 24px; padding: 12px 0 6px; }
+    .acciones { display: flex; align-items: center; gap: 16px; font-size: 24px; padding: 12px 0 6px; }
     .acciones i { cursor: pointer; }
     .acciones i:hover { color: var(--rosa); }
     .acciones .guardar { margin-left: auto; }

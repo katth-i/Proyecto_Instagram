@@ -1,0 +1,29 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Notificaciones - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="muro" style="max-width: 470px; margin: 0 auto; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 16px;">
+    <h2>Notificaciones 🔔</h2>
+    <hr style="border: 0; border-top: 1px solid var(--borde); margin-bottom: 12px;">
+
+    {% for notif in notificaciones %}
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 14px;">
+            {% if notif.tipo == 'like' %}
+                <i class="bi bi-heart-fill" style="color: var(--rosa); font-size: 20px;"></i>
+                <p style="margin: 0;">
+                    <strong>{{ notif.actor.username }}</strong> le dio me gusta a tu publicación.
+                </p>
+            {% elif notif.tipo == 'comentario' %}
+                <i class="bi bi-chat-fill" style="color: var(--rosa); font-size: 20px;"></i>
+                <p style="margin: 0;">
+                    <strong>{{ notif.actor.username }}</strong> comentó en tu publicación.
+                </p>
+            {% endif %}
+            <span style="margin-left: auto; color: var(--texto-suave); font-size: 12px;">{{ notif.creado_el|timesince }}</span>
+        </div>
+    {% empty %}
+        <p style="text-align: center; color: var(--texto-suave); margin-top: 40px;">No tienes notificaciones todavía.</p>
+    {% endfor %}
+</div>
+{% endblock %}

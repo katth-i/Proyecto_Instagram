@@ -1,17 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import RegistroForm
-from .models import Perfil
-from .forms import PublicacionForm
-from .models import Publicacion
+from .forms import RegistroForm, PublicacionForm
+from .models import Publicacion, Comentario, Notificacion, Perfil
 
-
-@login_required(login_url='login')
-def inicio(request):
-    return render(request, 'cuentas/inicio.html')
 
 def registro_view(request):
     if request.method == 'POST':
@@ -24,6 +18,7 @@ def registro_view(request):
         form = RegistroForm()
     
     return render(request, 'cuentas/registro.html', {'form': form})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -62,24 +57,74 @@ def login_view(request):
 
     return render(request, 'cuentas/login.html')
 
+
 @login_required
-def crear_publicacion(request):
-    if request.method == 'POST':
-        # Recibimos los datos de texto y los archivos (imágenes) que mandó el usuario
-        form = PublicacionForm(request.POST, request.FILES)
-        if form.is_valid():
-            # commit=False nos permite detener el guardado un segundo para asignarle el usuario actual
-            publicacion = form.save(commit=False)
-            publicacion.user = request.user  # Asignamos la foto al usuario que ha iniciado sesión
-            publicacion.save()  # Ahora sí guardamos en la base de datos
-            return redirect('inicio')  # Redirigimos al muro principal
-    else:
-        form = PublicacionForm()
-    return render(request, 'cuentas/crear.html', {'form': form})
-
-    
-
 def inicio(request):
     # Obtenemos todas las publicaciones de la base de datos (ordenadas de la más nueva a la más vieja)
     publicaciones = Publicacion.objects.all().order_by('-id')
     return render(request, 'cuentas/inicio.html', {'publicaciones': publicaciones})
+
+
+@login_required
+def crear_publicacion(request):
+    if request.method == 'POST':
+        form = PublicacionForm(request.POST, request.FILES)
+        if form.is_valid():
+            publicacion = form.save(commit=False)
+            publicacion.user = request.user  # Asignamos la foto al usuario actual
+            publicacion.save()  
+            return redirect('inicio')  
+    else:
+        form = PublicacionForm()
+    return render(request, 'cuentas/crear.html', {'form': form})
+
+
+@login_required
+def agregar_comentario(request, publicacion_id):
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id)
+    if request.method == 'POST':
+        texto = request.POST.get('texto')
+        if texto:
+            Comentario.objects.create(
+                publicacion=publicacion,
+                user=request.user,
+                texto=texto
+            )
+            # Crear notificación si no es su propia publicación
+            if request.user != publicacion.user:
+                Notificacion.objects.create(
+                    user=publicacion.user,
+                    actor=request.user,
+                    tipo='comentario',
+                    publicacion=publicacion
+                )
+    return redirect('inicio')
+
+
+@login_required
+def dar_like(request, publicacion_id):
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id)
+    
+    if request.user in publicacion.likes.all():
+        publicacion.likes.remove(request.user)
+        # Si quita el like, eliminamos la notificación correspondiente
+        Notificacion.objects.filter(user=publicacion.user, actor=request.user, publicacion=publicacion, tipo='like').delete()
+    else:
+        publicacion.likes.add(request.user)
+        # Si le da like y no es su propia publicación, creamos la notificación
+        if request.user != publicacion.user:
+            Notificacion.objects.create(
+                user=publicacion.user,
+                actor=request.user,
+                tipo='like',
+                publicacion=publicacion
+            )
+            
+    return redirect('inicio')
+
+
+@login_required
+def ver_notificaciones(request):
+    notificaciones = Notificacion.objects.filter(user=request.user).order_by('-creado_el')
+    notificaciones.update(leida=True)  # Marcar como leídas al abrirlas
+    return render(request, 'cuentas/notificaciones.html', {'notificaciones': notificaciones})
