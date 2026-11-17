@@ -6,6 +6,11 @@
 <div class="crear-card">
     <h2>Crear nueva publicación</h2>
 
+    <!-- Errores (antes no se mostraban y parecía que no pasaba nada) -->
+    <p id="error-foto" class="error-foto" {% if not form.errors %}style="display:none"{% endif %}>
+        {% for campo in form %}{% for e in campo.errors %}{{ e }} {% endfor %}{% endfor %}{% for e in form.non_field_errors %}{{ e }} {% endfor %}
+    </p>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
@@ -15,11 +20,12 @@
             <div id="texto-foto">
                 <i class="bi bi-images"></i>
                 <p>Haz clic para seleccionar una foto</p>
+                <small>JPG, PNG, WEBP o GIF · máximo 10 MB</small>
             </div>
         </label>
-        <input type="file" id="imagen" name="imagen" accept="image/*" required hidden>
+        <input type="file" id="imagen" name="imagen" accept="image/jpeg,image/png,image/webp,image/gif" required hidden>
 
-        <textarea name="descripcion" rows="4" placeholder="Escribe una descripción..."></textarea>
+        <textarea name="descripcion" rows="4" placeholder="Escribe una descripción...">{{ form.descripcion.value|default:'' }}</textarea>
 
         <button type="submit" class="btn-publicar">Publicar</button>
     </form>
@@ -47,18 +53,49 @@
         background: var(--rosa); color: #fff; border: none; border-radius: 10px;
         font-size: 16px; font-weight: bold; cursor: pointer;
     }
+    .zona-foto small { display: block; font-size: 12px; }
+    .error-foto { background: #fde2e6; color: var(--rojo); padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+    .btn-publicar:disabled { opacity: .6; cursor: wait; }
     .btn-publicar:hover { background: var(--rosa-oscuro); }
 </style>
 
 <script>
-    // Muestra la foto elegida dentro del recuadro
-    document.getElementById('imagen').addEventListener('change', function () {
+    const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const MAX_MB = 10;
+    const input = document.getElementById('imagen');
+    const error = document.getElementById('error-foto');
+
+    function mostrarError(texto) {
+        error.textContent = texto;
+        error.style.display = 'block';
+    }
+
+    // Revisa la foto apenas se elige (antes de enviarla al servidor)
+    input.addEventListener('change', function () {
         const archivo = this.files[0];
         if (!archivo) return;
+        if (!TIPOS.includes(archivo.type)) {
+            mostrarError('Formato no compatible. Sube una imagen JPG, PNG, WEBP o GIF.');
+            this.value = '';
+            return;
+        }
+        if (archivo.size > MAX_MB * 1024 * 1024) {
+            mostrarError('La imagen pesa demasiado. El máximo es ' + MAX_MB + ' MB.');
+            this.value = '';
+            return;
+        }
+        error.style.display = 'none';
         const img = document.getElementById('vista-previa');
         img.src = URL.createObjectURL(archivo);
         img.style.display = 'block';
         document.getElementById('texto-foto').style.display = 'none';
+    });
+
+    // Evita publicar dos veces si se hace doble clic
+    document.querySelector('.crear-card form').addEventListener('submit', function () {
+        const boton = this.querySelector('.btn-publicar');
+        boton.disabled = true;
+        boton.textContent = 'Publicando...';
     });
 </script>
 {% endblock %}

@@ -19,6 +19,11 @@
                 <p style="margin: 0;">
                     <strong>{{ notif.actor.username }}</strong> comentó en tu publicación.
                 </p>
+            {% elif notif.tipo == 'seguir' %}
+                <i class="bi bi-person-plus-fill" style="color: var(--rosa); font-size: 20px;"></i>
+                <p style="margin: 0;">
+                    <a href="{% url 'perfil' notif.actor.username %}" style="color: inherit; text-decoration: none;"><strong>{{ notif.actor.username }}</strong></a> comenzó a seguirte.
+                </p>
             {% endif %}
             <span style="margin-left: auto; color: var(--texto-suave); font-size: 12px;">{{ notif.creado_el|timesince }}</span>
         </div>

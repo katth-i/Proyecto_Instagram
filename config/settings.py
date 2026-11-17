@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+try:
+    import dj_database_url  # solo hace falta en Render (con Neon)
+except ImportError:
+    dj_database_url = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +25,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u6a^na+$8h9hb#7_ncym#z6umc1h3$staeae%82r_cst(e$2(%'
+# En Render se define la variable SECRET_KEY; en tu computadora se usa esta de respaldo
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-u6a^na+$8h9hb#7_ncym#z6umc1h3$staeae%82r_cst(e$2(%')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# En Render se pone DEBUG=False; en tu computadora queda en True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
+
+# Necesario para que los formularios (login, likes, etc.) funcionen en https://...onrender.com
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -40,6 +50,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cuentas',
 ]
+
+# Cloudinary (fotos en la nube): solo se activa si existe la variable CLOUDINARY_URL
+USAR_CLOUDINARY = bool(os.environ.get('CLOUDINARY_URL'))
+if USAR_CLOUDINARY:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -64,6 +79,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'cuentas.context_processors.notificaciones_no_leidas',  # círculo rojo de notificaciones
             ],
         },
     },
@@ -75,12 +91,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Si existe la variable DATABASE_URL (Neon en Render) usa PostgreSQL;
+# si no (tu computadora), sigue usando db.sqlite3
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+if os.environ.get('DATABASE_URL') and dj_database_url:
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600)
 
 
 # Password validation
@@ -119,7 +139,20 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # (nombre antiguo, lo usa cloudinary_storage)
+
+# Dónde se guardan las fotos subidas (default) y los archivos estáticos (staticfiles)
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage' if USAR_CLOUDINARY
+                   else 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if not DEBUG
+                   else 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+DEFAULT_FILE_STORAGE = STORAGES['default']['BACKEND']  # (nombre antiguo, lo usa cloudinary_storage)
 
 
 # Default primary key field type

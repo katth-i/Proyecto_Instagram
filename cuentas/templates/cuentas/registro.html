@@ -16,6 +16,7 @@
         form input:focus { outline: none; border-color: #e75480; }
         /* Ajuste específico para que el checkbox no ocupe el 100% de ancho */
         form input[type="checkbox"] { width: auto; display: inline-block; margin-right: 5px; accent-color: #e75480; }
+        form .helptext { display: block; color: #a07a8b; font-size: 10px; margin-top: 2px; }
         form ul.errorlist { color: #e0455f; font-size: 11px; list-style: none; padding: 0; margin: 2px 0; }
         button[type="submit"] { background: #e75480; color: white; border: none; padding: 10px; width: 100%; font-family: inherit; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; font-size: 14px; }
         button[type="submit"]:hover { background: #c93d68; }
@@ -29,9 +30,19 @@
         const fechaInput = document.querySelector('input[type="date"]');
         if (fechaInput) {
             const hoy = new Date();
-            fechaInput.max = hoy.toISOString().split("T")[0];
+            // Edad mínima: 14 años (el servidor también lo valida)
+            const maxFecha = new Date(hoy.getFullYear() - 14, hoy.getMonth(), hoy.getDate());
+            fechaInput.max = maxFecha.toISOString().split("T")[0];
             const minFecha = new Date(hoy.getFullYear() - 100, hoy.getMonth(), hoy.getDate());
             fechaInput.min = minFecha.toISOString().split("T")[0];
+        }
+
+        // Teléfono: solo permite escribir números
+        const telInput = document.querySelector('input[name="telefono"]');
+        if (telInput) {
+            telInput.addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            });
         }
 
         // 2. Funcionalidad de Mostrar/Ocultar Contraseña

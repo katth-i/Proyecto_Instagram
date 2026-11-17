@@ -7,9 +7,15 @@
     {% for publicacion in publicaciones %}
         <article class="tarjeta">
             <div class="tarjeta-header">
-                <i class="bi bi-person-circle"></i>
-                <strong>{{ publicacion.user.username }}</strong>
-                <span class="tiempo">{{ publicacion.fecha|timesince }}</span>
+                <a href="{% url 'perfil' publicacion.user.username %}" class="autor">
+                    {% if publicacion.user.perfil.foto %}
+                        <img src="{{ publicacion.user.perfil.foto.url }}" alt="" class="avatar">
+                    {% else %}
+                        <i class="bi bi-person-circle"></i>
+                    {% endif %}
+                    <strong>{{ publicacion.user.username }}</strong>
+                </a>
+                <span class="tiempo">hace {{ publicacion.creado_el|timesince }}</span>
             </div>
 
             <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}">
@@ -36,13 +42,13 @@
             </div>
 
             <p class="descripcion">
-                <strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion }}
+                <a href="{% url 'perfil' publicacion.user.username %}" style="color: inherit; text-decoration: none;"><strong>{{ publicacion.user.username }}</strong></a> {{ publicacion.descripcion|default:'' }}
             </p>
 
             <!-- SECCIÓN DE COMENTARIOS (Con desplazamiento vertical) -->
             <div class="comentarios-seccion" style="max-height: 120px; overflow-y: auto; margin-top: 10px; font-size: 14px; padding-right: 5px;">
                 {% for comentario in publicacion.comentarios.all %}
-                    <p style="margin: 4px 0;"><strong>{{ comentario.user.username }}</strong> {{ comentario.texto }}</p>
+                    <p style="margin: 4px 0;"><a href="{% url 'perfil' comentario.user.username %}" style="color: inherit; text-decoration: none;"><strong>{{ comentario.user.username }}</strong></a> {{ comentario.texto }}</p>
                 {% endfor %}
             </div>
 
@@ -67,6 +73,9 @@
     .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 12px 16px 16px; margin-bottom: 24px; }
     .tarjeta-header { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; }
     .tarjeta-header i { font-size: 32px; color: var(--rosa); }
+    .autor { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+    .autor:hover strong { color: var(--rosa-oscuro); }
+    .tarjeta-header .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin: 0; }
     .tiempo { color: var(--texto-suave); font-size: 14px; margin-left: auto; }
     .tarjeta img { width: 100%; border-radius: 10px; display: block; margin-top: 8px; }
     .acciones { display: flex; align-items: center; gap: 16px; font-size: 24px; padding: 12px 0 6px; }

@@ -1,0 +1,66 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}{{ titulo }} de {{ usuario_perfil.username }} - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="lista-card">
+    <div class="lista-cabecera">
+        <a href="{% url 'perfil' usuario_perfil.username %}" class="volver"><i class="bi bi-arrow-left"></i></a>
+        <h2>{{ titulo }}</h2>
+    </div>
+    <div class="lista-tabs">
+        <a href="{% url 'seguidores' usuario_perfil.username %}" {% if titulo == 'Seguidores' %}class="activa"{% endif %}>Seguidores</a>
+        <a href="{% url 'seguidos' usuario_perfil.username %}" {% if titulo == 'Seguidos' %}class="activa"{% endif %}>Seguidos</a>
+    </div>
+
+    {% for persona in personas %}
+        <div class="persona">
+            <a href="{% url 'perfil' persona.username %}" class="persona-info">
+                {% if persona.perfil.foto %}
+                    <img src="{{ persona.perfil.foto.url }}" alt="">
+                {% else %}
+                    <i class="bi bi-person-circle"></i>
+                {% endif %}
+                <div>
+                    <strong>{{ persona.username }}</strong><br>
+                    <span>{{ persona.first_name }} {{ persona.last_name }}</span>
+                </div>
+            </a>
+            {% if persona != user %}
+                <form action="{% url 'seguir' persona.username %}" method="post">
+                    {% csrf_token %}
+                    {% if persona.id in mis_seguidos %}
+                        <button type="submit" class="btn-mini">Siguiendo</button>
+                    {% else %}
+                        <button type="submit" class="btn-mini btn-mini-rosa">Seguir</button>
+                    {% endif %}
+                </form>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p class="vacio-lista">
+            {% if titulo == 'Seguidores' %}Todavía nadie sigue a {{ usuario_perfil.username }}.
+            {% else %}{{ usuario_perfil.username }} todavía no sigue a nadie.{% endif %}
+        </p>
+    {% endfor %}
+</div>
+
+<style>
+    .lista-card { width: 100%; max-width: 470px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 16px; }
+    .lista-cabecera { display: flex; align-items: center; gap: 12px; }
+    .lista-cabecera h2 { margin: 0; font-size: 20px; }
+    .volver { color: var(--texto); font-size: 22px; }
+    .lista-tabs { display: flex; border-bottom: 1px solid var(--borde); margin: 12px 0 8px; }
+    .lista-tabs a { flex: 1; text-align: center; padding: 10px; color: var(--texto-suave); text-decoration: none; font-weight: bold; font-size: 14px; }
+    .lista-tabs a.activa { color: var(--rosa); border-bottom: 2px solid var(--rosa); margin-bottom: -1px; }
+    .persona { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .persona form { margin: 0; }
+    .persona-info { display: flex; align-items: center; gap: 12px; color: var(--texto); text-decoration: none; font-size: 14px; }
+    .persona-info img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .persona-info i { font-size: 44px; color: var(--rosa); line-height: 1; }
+    .persona-info span { color: var(--texto-suave); font-size: 13px; }
+    .btn-mini { padding: 6px 14px; border: none; border-radius: 8px; background: var(--rosa-suave); color: var(--rosa-oscuro); font-weight: bold; cursor: pointer; font-family: inherit; }
+    .btn-mini-rosa { background: var(--rosa); color: #fff; }
+    .vacio-lista { text-align: center; color: var(--texto-suave); margin: 30px 0; }
+</style>
+{% endblock %}

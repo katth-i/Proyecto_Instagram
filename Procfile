@@ -1,1 +1,1 @@
-web: gunicorn config.wsgipip install gunicorn
+web: gunicorn config.wsgi

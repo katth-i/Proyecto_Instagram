@@ -59,7 +59,11 @@ body {
 .menu i { font-size: 24px; }
 
 .usuario { padding: 12px; border-top: 1px solid var(--borde); }
-.usuario span { display: block; margin-bottom: 10px; font-weight: bold; }
+.usuario-link { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: bold;
+                color: var(--texto); text-decoration: none; }
+.usuario-link:hover { color: var(--rosa-oscuro); }
+.usuario-link i { font-size: 24px; color: var(--rosa); }
+.avatar-mini { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 .btn-salir {
     width: 100%; padding: 8px;
     background: var(--rojo); color: #fff;
@@ -97,12 +101,19 @@ body {
                 </a>
             </li>
             <li><a href="{% url 'crear' %}"><i class="bi bi-plus-square"></i> Crear</a></li>
-            <li><a href="#"><i class="bi bi-person-circle"></i> Perfil</a></li>
+            <li><a href="{% url 'perfil' user.username %}"><i class="bi bi-person-circle"></i> Perfil</a></li>
         </ul>
 
         <!-- Parte inferior: usuario + cerrar sesión -->
         <div class="usuario">
-            <span><i class="bi bi-person-circle"></i> {{ user.username }}</span>
+            <a href="{% url 'perfil' user.username %}" class="usuario-link">
+                {% if user.perfil.foto %}
+                    <img src="{{ user.perfil.foto.url }}" alt="" class="avatar-mini">
+                {% else %}
+                    <i class="bi bi-person-circle"></i>
+                {% endif %}
+                {{ user.username }}
+            </a>
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="btn-salir">Cerrar sesión</button>

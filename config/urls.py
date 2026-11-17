@@ -4,7 +4,6 @@ from django.shortcuts import redirect
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from cuentas import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,8 +16,6 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='cuentas/password_reset_confirm.html'), name='password_reset_confirm'),
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name='cuentas/password_reset_complete.html'), name='password_reset_complete'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('comentario/<int:publicacion_id>/', views.agregar_comentario, name='agregar_comentario'),
 ]
 
 # Esto permite que Django cargue las imágenes en desarrollo
