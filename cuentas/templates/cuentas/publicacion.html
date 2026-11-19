@@ -6,7 +6,7 @@
 <div class="pub-pagina">
     <a href="{% url 'perfil' publicacion.user.username %}" class="volver-link"><i class="bi bi-arrow-left"></i> Volver al perfil</a>
 
-    <article class="pub-card">
+    <article class="pub-card" data-pub-id="{{ publicacion.id }}">
         <!-- Foto -->
         <div class="pub-foto">
             <img src="{{ publicacion.imagen.url }}" alt="Publicación de {{ publicacion.user.username }}">
@@ -32,12 +32,13 @@
                 {% endif %}
             </header>
 
-            <div class="pub-comentarios">
+            <div class="pub-comentarios js-scroll-comentarios">
                 {% if publicacion.descripcion %}
                     <p class="comentario"><strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion|linebreaksbr }}</p>
                 {% endif %}
+                <div class="js-comentarios" data-estilo="detalle">
                 {% for comentario in comentarios %}
-                    <p class="comentario">
+                    <p class="comentario" data-com-id="{{ comentario.id }}">
                         <a href="{% url 'perfil' comentario.user.username %}"><strong>{{ comentario.user.username }}</strong></a>
                         {{ comentario.texto }}
                         <span class="hace">hace {{ comentario.creado_el|timesince }}</span>
@@ -47,22 +48,23 @@
                         <p class="sin-comentarios">Todavía no hay comentarios.<br>¡Sé la primera persona en comentar! 💬</p>
                     {% endif %}
                 {% endfor %}
+                </div>
             </div>
 
             <div class="pub-acciones">
-                <a href="{% url 'dar_like' publicacion.id %}?next={{ request.path|urlencode }}" class="accion">
+                <a href="{% url 'dar_like' publicacion.id %}?next={{ request.path|urlencode }}" class="accion js-like">
                     {% if le_di_like %}
-                        <i class="bi bi-heart-fill" style="color: var(--rosa);"></i>
+                        <i class="bi bi-heart-fill js-like-icono" style="color: var(--rosa);"></i>
                     {% else %}
-                        <i class="bi bi-heart"></i>
+                        <i class="bi bi-heart js-like-icono"></i>
                     {% endif %}
                 </a>
                 <a href="#" class="accion" onclick="document.getElementById('comentario-detalle').focus(); return false;"><i class="bi bi-chat"></i></a>
-                <span class="contador"><strong>{{ publicacion.total_likes }}</strong> me gusta</span>
+                <span class="contador"><strong class="js-likes">{{ publicacion.total_likes }}</strong> me gusta</span>
                 <span class="fecha">hace {{ publicacion.creado_el|timesince }}</span>
             </div>
 
-            <form action="{% url 'agregar_comentario' publicacion.id %}" method="post" class="pub-form">
+            <form action="{% url 'agregar_comentario' publicacion.id %}" method="post" class="pub-form js-form-comentario">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.path }}">
                 {% include 'cuentas/_emojis.html' %}

@@ -14,6 +14,7 @@ urlpatterns = [
     path('publicacion/<int:publicacion_id>/', views.ver_publicacion, name='publicacion'),
     path('publicacion/<int:publicacion_id>/eliminar/', views.eliminar_publicacion, name='eliminar_publicacion'),
     path('api/notificaciones/', views.estado_notificaciones, name='estado_notificaciones'),
+    path('api/publicaciones/', views.estado_publicaciones, name='estado_publicaciones'),
     path('editar-perfil/', views.editar_perfil, name='editar_perfil'),
     path('perfil/<str:username>/', views.ver_perfil, name='perfil'),
     path('perfil/<str:username>/seguir/', views.seguir_usuario, name='seguir'),

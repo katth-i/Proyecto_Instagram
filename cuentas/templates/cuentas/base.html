@@ -340,6 +340,139 @@ body {
         document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
     })();
     </script>
+    <script>
+    // ===== Likes y comentarios en vivo (feed y página de publicación) =====
+    (function () {
+        const tarjetas = () => document.querySelectorAll('[data-pub-id]');
+        if (!tarjetas().length) return;
+        const URL_ESTADO = "{% url 'estado_publicaciones' %}";
+
+        function csrf() {
+            const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value;
+        }
+
+        // --- Pintar un like ---
+        function pintarLike(tarjeta, likes, leDiLike) {
+            tarjeta.querySelectorAll('.js-likes').forEach(el => el.textContent = likes);
+            tarjeta.querySelectorAll('.js-like-icono').forEach(i => {
+                i.className = 'bi ' + (leDiLike ? 'bi-heart-fill' : 'bi-heart') + ' js-like-icono';
+                i.style.color = leDiLike ? 'var(--rosa)' : '';
+            });
+        }
+
+        // --- Crear el HTML de un comentario (con textContent: seguro) ---
+        function crearComentario(c, estilo) {
+            const p = document.createElement('p');
+            p.dataset.comId = c.id;
+            if (estilo === 'detalle') p.className = 'comentario'; else p.style.margin = '4px 0';
+            const a = document.createElement('a');
+            a.href = c.perfil;
+            a.style.color = 'inherit'; a.style.textDecoration = 'none';
+            const b = document.createElement('strong');
+            b.textContent = c.usuario;
+            a.appendChild(b);
+            p.append(a, ' ' + c.texto);
+            if (estilo === 'detalle') {
+                const h = document.createElement('span');
+                h.className = 'hace';
+                h.textContent = 'hace ' + c.hace;
+                p.appendChild(h);
+            }
+            return p;
+        }
+
+        // --- Pintar la lista de comentarios solo si cambió ---
+        function pintarComentarios(tarjeta, comentarios, total) {
+            tarjeta.querySelectorAll('.js-num-comentarios').forEach(el => el.textContent = total);
+            const caja = tarjeta.querySelector('.js-comentarios');
+            if (!caja) return;
+            const actuales = [...caja.querySelectorAll('[data-com-id]')].map(p => p.dataset.comId).join(',');
+            const nuevos = comentarios.map(c => String(c.id)).join(',');
+            if (actuales === nuevos) return;
+            const scroll = caja.closest('.js-scroll-comentarios') || caja;
+            const estabaAbajo = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 40;
+            caja.innerHTML = '';
+            if (!comentarios.length && caja.dataset.estilo === 'detalle') {
+                const vacio = document.createElement('p');
+                vacio.className = 'sin-comentarios';
+                vacio.textContent = 'Todavía no hay comentarios. ¡Sé la primera persona en comentar! 💬';
+                caja.appendChild(vacio);
+            }
+            comentarios.forEach(c => caja.appendChild(crearComentario(c, caja.dataset.estilo)));
+            if (estabaAbajo) scroll.scrollTop = scroll.scrollHeight;
+        }
+
+        // --- Clic en el corazón: sin recargar ---
+        document.addEventListener('click', async function (ev) {
+            const boton = ev.target.closest('.js-like');
+            if (!boton) return;
+            ev.preventDefault();
+            const tarjeta = boton.closest('[data-pub-id]');
+            const icono = tarjeta.querySelector('.js-like-icono');
+            const antes = icono.classList.contains('bi-heart-fill');
+            const contador = tarjeta.querySelector('.js-likes');
+            pintarLike(tarjeta, Number(contador.textContent) + (antes ? -1 : 1), !antes);  // respuesta inmediata
+            icono.animate([{ transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 250 });
+            try {
+                const r = await fetch(boton.href.split('?')[0], {
+                    method: 'POST', headers: { 'X-Requested-With': 'fetch', 'X-CSRFToken': csrf() }
+                });
+                const d = await r.json();
+                pintarLike(tarjeta, d.likes, d.le_di_like);
+            } catch (e) { pintarLike(tarjeta, Number(contador.textContent) + (antes ? 1 : -1), antes); }
+        });
+
+        // --- Enviar comentario: sin recargar ---
+        document.addEventListener('submit', async function (ev) {
+            const form = ev.target.closest('.js-form-comentario');
+            if (!form) return;
+            ev.preventDefault();
+            const campo = form.querySelector('input[name="texto"], textarea[name="texto"]');
+            const boton = form.querySelector('button[type="submit"]');
+            if (!campo.value.trim()) return;
+            boton.disabled = true;
+            try {
+                const r = await fetch(form.action, {
+                    method: 'POST', body: new FormData(form),
+                    headers: { 'X-Requested-With': 'fetch', 'X-CSRFToken': csrf() }
+                });
+                const d = await r.json();
+                if (d.ok) {
+                    const tarjeta = form.closest('[data-pub-id]');
+                    const caja = tarjeta.querySelector('.js-comentarios');
+                    caja.querySelectorAll('.sin-comentarios').forEach(x => x.remove());
+                    caja.appendChild(crearComentario(d.comentario, caja.dataset.estilo));
+                    tarjeta.querySelectorAll('.js-num-comentarios').forEach(el => el.textContent = d.num_comentarios);
+                    const scroll = caja.closest('.js-scroll-comentarios') || caja;
+                    scroll.scrollTop = scroll.scrollHeight;
+                    campo.value = '';
+                }
+            } catch (e) { form.submit(); }    // si falla, se envía de la forma normal
+            finally { boton.disabled = false; campo.focus(); }
+        });
+
+        // --- Cada 5 segundos: traer likes y comentarios nuevos de otras personas ---
+        async function actualizar() {
+            if (document.hidden) return;
+            const ids = [...tarjetas()].map(t => t.dataset.pubId).slice(0, 30);
+            if (!ids.length) return;
+            try {
+                const r = await fetch(URL_ESTADO + '?ids=' + ids.join(','), { headers: { 'X-Requested-With': 'fetch' } });
+                if (!r.ok) return;
+                const { publicaciones } = await r.json();
+                tarjetas().forEach(t => {
+                    const d = publicaciones[t.dataset.pubId];
+                    if (!d) return;
+                    pintarLike(t, d.likes, d.le_di_like);
+                    pintarComentarios(t, d.comentarios, d.num_comentarios);
+                });
+            } catch (e) { /* se reintenta en la siguiente vuelta */ }
+        }
+        setInterval(actualizar, 5000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) actualizar(); });
+    })();
+    </script>
     {% endif %}
 </body>
 </html>

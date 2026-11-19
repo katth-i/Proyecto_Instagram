@@ -15,6 +15,22 @@ from .forms import RegistroForm, PublicacionForm, UsuarioEditForm, PerfilEditFor
 from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento
 
 
+def _es_ajax(request):
+    """True si la petición la hizo el JavaScript de la página (fetch), no un clic normal."""
+    return request.headers.get('X-Requested-With') == 'fetch'
+
+
+def _comentario_json(c):
+    from django.utils.timesince import timesince
+    return {
+        'id': c.id,
+        'usuario': c.user.username,
+        'texto': c.texto,
+        'hace': timesince(c.creado_el).split(',')[0],
+        'perfil': reverse('perfil', args=[c.user.username]),
+    }
+
+
 def _volver(request, por_defecto):
     """Redirige a ?next=... (si es una dirección de Fotitos) o a la página por defecto."""
     siguiente = request.POST.get('next') or request.GET.get('next')
@@ -105,9 +121,9 @@ def crear_publicacion(request):
 def agregar_comentario(request, publicacion_id):
     publicacion = get_object_or_404(Publicacion, id=publicacion_id)
     if request.method == 'POST':
-        texto = request.POST.get('texto')
+        texto = (request.POST.get('texto') or '').strip()[:500]
         if texto:
-            Comentario.objects.create(
+            comentario = Comentario.objects.create(
                 publicacion=publicacion,
                 user=request.user,
                 texto=texto
@@ -120,6 +136,14 @@ def agregar_comentario(request, publicacion_id):
                     tipo='comentario',
                     publicacion=publicacion
                 )
+            if _es_ajax(request):
+                return JsonResponse({
+                    'ok': True,
+                    'comentario': _comentario_json(comentario),
+                    'num_comentarios': publicacion.comentarios.count(),
+                })
+    if _es_ajax(request):
+        return JsonResponse({'ok': False, 'error': 'Escribe un comentario.'}, status=400)
     return _volver(request, reverse('inicio') + f'#pub-{publicacion.id}')
 
 
@@ -142,7 +166,12 @@ def dar_like(request, publicacion_id):
                 tipo='like',
                 publicacion=publicacion
             )
-            
+
+    if _es_ajax(request):
+        return JsonResponse({
+            'likes': publicacion.likes.count(),
+            'le_di_like': publicacion.likes.filter(pk=request.user.pk).exists(),
+        })
     return _volver(request, reverse('inicio') + f'#pub-{publicacion.id}')
 
 
@@ -375,3 +404,29 @@ def estado_notificaciones(request):
     for fila in no_leidas.values('tipo').annotate(total=Count('id')):
         por_tipo[fila['tipo']] = fila['total']
     return JsonResponse({'no_leidas': no_leidas.count(), 'por_tipo': por_tipo, 'nuevas': nuevas, 'ultimo_id': ultimo})
+
+
+@login_required
+def estado_publicaciones(request):
+    """
+    El navegador la consulta cada pocos segundos con los ids de las publicaciones que
+    tiene en pantalla, y recibe likes y comentarios actualizados (sin recargar).
+    """
+    try:
+        ids = [int(x) for x in request.GET.get('ids', '').split(',') if x][:30]
+    except ValueError:
+        return JsonResponse({'publicaciones': {}})
+    datos = {}
+    publicaciones = Publicacion.objects.filter(id__in=ids).annotate(
+        num_likes=Count('likes', distinct=True), num_comentarios=Count('comentarios', distinct=True)
+    )
+    mis_likes = set(request.user.likes_publicaciones.filter(id__in=ids).values_list('id', flat=True))
+    for p in publicaciones:
+        ultimos = list(p.comentarios.select_related('user').order_by('-creado_el')[:50])[::-1]
+        datos[p.id] = {
+            'likes': p.num_likes,
+            'le_di_like': p.id in mis_likes,
+            'num_comentarios': p.num_comentarios,
+            'comentarios': [_comentario_json(c) for c in ultimos],
+        }
+    return JsonResponse({'publicaciones': datos})

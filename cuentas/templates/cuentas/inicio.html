@@ -5,7 +5,7 @@
 {% block contenido %}
 <div class="muro">
     {% for publicacion in publicaciones %}
-        <article class="tarjeta" id="pub-{{ publicacion.id }}">
+        <article class="tarjeta" id="pub-{{ publicacion.id }}" data-pub-id="{{ publicacion.id }}">
             <div class="tarjeta-header">
                 <a href="{% url 'perfil' publicacion.user.username %}" class="autor">
                     {% if publicacion.user.perfil.foto %}
@@ -22,19 +22,19 @@
 
             <div class="acciones">
                 <!-- Botón de Likes -->
-                <a href="{% url 'dar_like' publicacion.id %}" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                <a href="{% url 'dar_like' publicacion.id %}" class="js-like" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 6px;">
                     {% if request.user in publicacion.likes.all %}
-                        <i class="bi bi-heart-fill" style="color: var(--rosa);"></i>
+                        <i class="bi bi-heart-fill js-like-icono" style="color: var(--rosa);"></i>
                     {% else %}
-                        <i class="bi bi-heart"></i>
+                        <i class="bi bi-heart js-like-icono"></i>
                     {% endif %}
-                    <span class="contador-likes" style="font-size: 18px; font-weight: bold;">{{ publicacion.total_likes }}</span>
+                    <span class="contador-likes js-likes" style="font-size: 18px; font-weight: bold;">{{ publicacion.total_likes }}</span>
                 </a>
 
                 <!-- Botón de Comentarios (con contador y acción de foco) -->
                 <a href="#" onclick="document.getElementById('input-comentario-{{ publicacion.id }}').focus(); return false;" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 6px;">
                     <i class="bi bi-chat"></i>
-                    <span style="font-size: 18px; font-weight: bold;">{{ publicacion.comentarios.count }}</span>
+                    <span class="js-num-comentarios" style="font-size: 18px; font-weight: bold;">{{ publicacion.comentarios.count }}</span>
                 </a>
 
                 <i class="bi bi-send"></i>
@@ -46,14 +46,14 @@
             </p>
 
             <!-- SECCIÓN DE COMENTARIOS (Con desplazamiento vertical) -->
-            <div class="comentarios-seccion" style="max-height: 120px; overflow-y: auto; margin-top: 10px; font-size: 14px; padding-right: 5px;">
+            <div class="comentarios-seccion js-comentarios" data-estilo="feed" style="max-height: 120px; overflow-y: auto; margin-top: 10px; font-size: 14px; padding-right: 5px;">
                 {% for comentario in publicacion.comentarios.all %}
-                    <p style="margin: 4px 0;"><a href="{% url 'perfil' comentario.user.username %}" style="color: inherit; text-decoration: none;"><strong>{{ comentario.user.username }}</strong></a> {{ comentario.texto }}</p>
+                    <p style="margin: 4px 0;" data-com-id="{{ comentario.id }}"><a href="{% url 'perfil' comentario.user.username %}" style="color: inherit; text-decoration: none;"><strong>{{ comentario.user.username }}</strong></a> {{ comentario.texto }}</p>
                 {% endfor %}
             </div>
 
             <!-- Formulario con ID dinámico para el foco -->
-            <form action="{% url 'agregar_comentario' publicacion.id %}" method="POST" style="display: flex; margin-top: 8px; border-top: 1px solid var(--borde); padding-top: 8px;">
+            <form action="{% url 'agregar_comentario' publicacion.id %}" method="POST" class="js-form-comentario" style="display: flex; margin-top: 8px; border-top: 1px solid var(--borde); padding-top: 8px;">
                 {% csrf_token %}
                 {% include 'cuentas/_emojis.html' %}
                 <input id="input-comentario-{{ publicacion.id }}" type="text" name="texto" placeholder="Agrega un comentario..." required style="flex-grow: 1; border: none; outline: none; background: transparent; font-size: 14px; color: inherit;">
