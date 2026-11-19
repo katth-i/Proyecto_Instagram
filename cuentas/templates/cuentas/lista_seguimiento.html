@@ -27,8 +27,10 @@
                 </div>
             </a>
             {% if persona != user %}
-                <form action="{% url 'seguir' persona.username %}" method="post">
+                <form action="{% url 'seguir' persona.username %}" method="post"
+                  {% if persona.id in mis_seguidos %}data-dejar-de-seguir="{{ persona.username }}"{% endif %}>
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     {% if persona.id in mis_seguidos %}
                         <button type="submit" class="btn-mini">Siguiendo</button>
                     {% else %}

@@ -1,4 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -6,10 +9,18 @@ from django.views.decorators.cache import never_cache
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib import messages
 from datetime import timedelta
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from .forms import RegistroForm, PublicacionForm, UsuarioEditForm, PerfilEditForm
 from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento
+
+
+def _volver(request, por_defecto):
+    """Redirige a ?next=... (si es una dirección de Fotitos) o a la página por defecto."""
+    siguiente = request.POST.get('next') or request.GET.get('next')
+    if siguiente and url_has_allowed_host_and_scheme(siguiente, allowed_hosts={request.get_host()}):
+        return redirect(siguiente)
+    return redirect(por_defecto)
 
 
 @never_cache
@@ -109,7 +120,7 @@ def agregar_comentario(request, publicacion_id):
                     tipo='comentario',
                     publicacion=publicacion
                 )
-    return redirect('inicio')
+    return _volver(request, reverse('inicio') + f'#pub-{publicacion.id}')
 
 
 @never_cache
@@ -132,15 +143,23 @@ def dar_like(request, publicacion_id):
                 publicacion=publicacion
             )
             
-    return redirect('inicio')
+    return _volver(request, reverse('inicio') + f'#pub-{publicacion.id}')
 
 
 @never_cache
 @login_required
 def ver_notificaciones(request):
-    notificaciones = Notificacion.objects.filter(user=request.user).order_by('-creado_el')
-    notificaciones.update(leida=True)  # Marcar como leídas al abrirlas
-    return render(request, 'cuentas/notificaciones.html', {'notificaciones': notificaciones})
+    notificaciones = list(
+        Notificacion.objects.filter(user=request.user)
+        .select_related('actor', 'actor__perfil', 'publicacion')
+        .order_by('-creado_el')[:100]
+    )
+    Notificacion.objects.filter(user=request.user, leida=False).update(leida=True)  # marcar como leídas
+    return render(request, 'cuentas/notificaciones.html', {
+        'notificaciones': notificaciones,
+        # para saber a quién ya sigo (y mostrar "Seguir también" o "Siguiendo")
+        'mis_seguidos': set(request.user.siguiendo.values_list('seguido_id', flat=True)),
+    })
 
 
 @never_cache
@@ -231,7 +250,43 @@ def seguir_usuario(request, username):
         else:
             Seguimiento.objects.create(seguidor=request.user, seguido=usuario)
             Notificacion.objects.create(user=usuario, actor=request.user, tipo='seguir')
+    # Volver a la página desde donde se pulsó el botón (búsqueda, lista de seguidores...)
+    siguiente = request.POST.get('next')
+    if siguiente and url_has_allowed_host_and_scheme(siguiente, allowed_hosts={request.get_host()}):
+        return redirect(siguiente)
     return redirect('perfil', username=usuario.username)
+
+
+@never_cache
+@login_required
+def buscar(request):
+    """Buscar usuarios por nombre de usuario, nombre o apellido."""
+    consulta = request.GET.get('q', '').strip().lstrip('@')
+    if consulta:
+        personas = User.objects.filter(
+            Q(username__icontains=consulta) | Q(first_name__icontains=consulta) | Q(last_name__icontains=consulta)
+        ).exclude(pk=request.user.pk)
+        # Primero los que empiezan con lo escrito
+        personas = sorted(personas.select_related('perfil')[:50],
+                          key=lambda u: (not u.username.lower().startswith(consulta.lower()), u.username.lower()))
+        sugerencias = False
+    else:
+        # Sin búsqueda: sugerir gente que todavía no sigo
+        personas = (User.objects.exclude(pk=request.user.pk)
+                    .exclude(seguidores__seguidor=request.user)
+                    .select_related('perfil')
+                    .annotate(total_seguidores=Count('seguidores'))
+                    .order_by('-total_seguidores', '-date_joined')[:15])
+        sugerencias = True
+    mis_seguidos = set(request.user.siguiendo.values_list('seguido_id', flat=True))
+    me_siguen = set(request.user.seguidores.values_list('seguidor_id', flat=True))
+    return render(request, 'cuentas/buscar.html', {
+        'consulta': consulta,
+        'personas': personas,
+        'sugerencias': sugerencias,
+        'mis_seguidos': mis_seguidos,
+        'me_siguen': me_siguen,
+    })
 
 
 @never_cache
@@ -253,3 +308,70 @@ def lista_seguimiento(request, username, tipo):
         'titulo': titulo,
         'mis_seguidos': mis_seguidos,
     })
+
+
+@never_cache
+@login_required
+def ver_publicacion(request, publicacion_id):
+    """Página de una publicación: foto, likes y todos sus comentarios."""
+    publicacion = get_object_or_404(
+        Publicacion.objects.select_related('user', 'user__perfil'), id=publicacion_id
+    )
+    comentarios = publicacion.comentarios.select_related('user', 'user__perfil').order_by('creado_el')
+    return render(request, 'cuentas/publicacion.html', {
+        'publicacion': publicacion,
+        'comentarios': comentarios,
+        'le_di_like': publicacion.likes.filter(pk=request.user.pk).exists(),
+        'es_mia': publicacion.user == request.user,
+    })
+
+
+@login_required
+@require_POST
+def eliminar_publicacion(request, publicacion_id):
+    """Solo el dueño puede eliminar su publicación."""
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id, user=request.user)
+    publicacion.imagen.delete(save=False)  # borra también el archivo (local o Cloudinary)
+    publicacion.delete()
+    messages.success(request, 'Publicación eliminada.')
+    return redirect('perfil', username=request.user.username)
+
+
+@login_required
+def estado_notificaciones(request):
+    """
+    La consulta el navegador cada pocos segundos (sin recargar la página).
+    Devuelve cuántas notificaciones sin leer hay y las nuevas desde la última revisada.
+    """
+    no_leidas = Notificacion.objects.filter(user=request.user, leida=False)
+    try:
+        desde = int(request.GET.get('desde', 0))
+    except ValueError:
+        desde = 0
+    textos = {
+        'like': 'le dio me gusta a tu publicación ❤️',
+        'comentario': 'comentó en tu publicación 💬',
+        'seguir': 'comenzó a seguirte 👤',
+    }
+    nuevas = []
+    if desde:  # la primera vez solo se toma el último id, sin mostrar avisos viejos
+        for n in no_leidas.filter(id__gt=desde).select_related('actor', 'actor__perfil').order_by('id')[:5]:
+            perfil = getattr(n.actor, 'perfil', None)
+            if n.publicacion_id:
+                enlace = reverse('publicacion', args=[n.publicacion_id])
+            else:
+                enlace = reverse('perfil', args=[n.actor.username])
+            nuevas.append({
+                'id': n.id,
+                'tipo': n.tipo,
+                'actor': n.actor.username,
+                'texto': textos.get(n.tipo, 'interactuó contigo'),
+                'foto': perfil.foto.url if perfil and perfil.foto else '',
+                'enlace': enlace,
+            })
+    ultimo = Notificacion.objects.filter(user=request.user).order_by('-id').values_list('id', flat=True).first() or 0
+    # Cuántas sin leer hay de cada tipo (para la burbuja ❤️ 2  👤 1  💬 3)
+    por_tipo = {'like': 0, 'comentario': 0, 'seguir': 0}
+    for fila in no_leidas.values('tipo').annotate(total=Count('id')):
+        por_tipo[fila['tipo']] = fila['total']
+    return JsonResponse({'no_leidas': no_leidas.count(), 'por_tipo': por_tipo, 'nuevas': nuevas, 'ultimo_id': ultimo})

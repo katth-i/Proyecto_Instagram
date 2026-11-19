@@ -5,7 +5,7 @@
 {% block contenido %}
 <div class="muro">
     {% for publicacion in publicaciones %}
-        <article class="tarjeta">
+        <article class="tarjeta" id="pub-{{ publicacion.id }}">
             <div class="tarjeta-header">
                 <a href="{% url 'perfil' publicacion.user.username %}" class="autor">
                     {% if publicacion.user.perfil.foto %}
@@ -18,7 +18,7 @@
                 <span class="tiempo">hace {{ publicacion.creado_el|timesince }}</span>
             </div>
 
-            <img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}">
+            <a href="{% url 'publicacion' publicacion.id %}"><img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}"></a>
 
             <div class="acciones">
                 <!-- Botón de Likes -->
@@ -55,6 +55,7 @@
             <!-- Formulario con ID dinámico para el foco -->
             <form action="{% url 'agregar_comentario' publicacion.id %}" method="POST" style="display: flex; margin-top: 8px; border-top: 1px solid var(--borde); padding-top: 8px;">
                 {% csrf_token %}
+                {% include 'cuentas/_emojis.html' %}
                 <input id="input-comentario-{{ publicacion.id }}" type="text" name="texto" placeholder="Agrega un comentario..." required style="flex-grow: 1; border: none; outline: none; background: transparent; font-size: 14px; color: inherit;">
                 <button type="submit" style="background: none; border: none; color: var(--rosa); font-weight: bold; cursor: pointer;">Publicar</button>
             </form>

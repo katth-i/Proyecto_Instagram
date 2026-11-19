@@ -71,6 +71,65 @@ body {
 }
 .btn-salir:hover { background: #c4344d; }
 
+/* --- Contador rojo y avisos de notificaciones --- */
+.badge-notis { background: var(--rojo); color: #fff; border-radius: 10px; min-width: 20px; height: 20px; padding: 0 5px;
+               display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+.badge-notis[hidden] { display: none; }
+.avisos { position: fixed; bottom: 24px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+.aviso-noti { position: relative; display: flex; align-items: center; width: 340px; background: var(--tarjeta);
+              border: 1px solid var(--borde); border-radius: 14px; box-shadow: 0 10px 30px rgba(74, 43, 58, 0.20);
+              animation: entrar .35s ease-out; transition: opacity .4s, transform .4s; overflow: hidden; }
+.aviso-noti::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--rosa); }
+.aviso-noti.saliendo { opacity: 0; transform: translateX(30px); }
+.aviso-contenido { flex: 1; display: flex; align-items: center; gap: 12px; padding: 12px 8px 12px 16px;
+                   color: var(--texto); text-decoration: none; font-size: 14px; }
+.aviso-avatar { position: relative; flex-shrink: 0; width: 44px; height: 44px; }
+.aviso-avatar img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.aviso-avatar > .bi-person-circle { font-size: 44px; line-height: 1; color: var(--rosa); }
+.aviso-icono { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%;
+               background: var(--rosa); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center;
+               border: 2px solid var(--tarjeta); }
+.aviso-texto small { display: block; color: var(--texto-suave); font-size: 11px; margin-top: 2px; }
+.aviso-cerrar { background: none; border: none; color: var(--texto-suave); cursor: pointer; padding: 8px 12px; font-size: 13px; }
+.aviso-cerrar:hover { color: var(--rosa-oscuro); }
+@keyframes entrar { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* --- Burbuja de notificaciones (estilo Instagram) --- */
+.menu li { position: relative; }
+.menu .burbuja-notis { position: absolute; left: calc(100% + 18px); top: 50%; transform: translateY(-50%); z-index: 60;
+                 display: flex; align-items: center; gap: 12px; padding: 8px 14px; margin: 0; border-radius: 12px;
+                 background: var(--rosa); color: #fff !important; text-decoration: none; font-size: 15px; white-space: nowrap;
+                 box-shadow: 0 6px 18px rgba(231, 84, 128, 0.35); }
+.menu .burbuja-notis[hidden], .menu .burbuja-notis span[hidden] { display: none; }
+.menu .burbuja-notis::before { content: ''; position: absolute; left: -7px; top: 50%; transform: translateY(-50%);
+                         border: 8px solid transparent; border-left: 0; border-right-color: var(--rosa); }
+.menu .burbuja-notis span { display: flex; align-items: center; gap: 5px; }
+.menu .burbuja-notis i { font-size: 16px; }
+.menu .burbuja-notis:hover { background: var(--rosa-oscuro); }
+.menu .burbuja-notis:hover::before { border-right-color: var(--rosa-oscuro); }
+.menu .burbuja-notis.saltar { animation: saltar .5s ease-out; }
+@keyframes saltar {
+    0% { transform: translateY(-50%) scale(.6); opacity: 0; }
+    60% { transform: translateY(-50%) scale(1.12); opacity: 1; }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+/* --- Ventana de confirmación --- */
+.modal-fondo { position: fixed; inset: 0; z-index: 200; background: rgba(74, 43, 58, 0.45);
+               display: flex; align-items: center; justify-content: center; animation: aparecer .15s ease-out; }
+.modal-fondo[hidden] { display: none; }
+.modal-caja { width: 340px; background: var(--tarjeta); border-radius: 18px; overflow: hidden; text-align: center;
+              box-shadow: 0 20px 50px rgba(74, 43, 58, 0.3); animation: crecer .2s ease-out; }
+.modal-icono { display: block; font-size: 40px; color: var(--rosa); margin: 24px 0 4px; }
+.modal-titulo { margin: 8px 24px 4px; font-size: 17px; }
+.modal-sub { margin: 0 24px 20px; color: var(--texto-suave); font-size: 13px; }
+.modal-btn { display: block; width: 100%; padding: 14px; background: none; border: none; border-top: 1px solid var(--borde);
+             font-size: 15px; font-family: inherit; cursor: pointer; color: var(--texto); }
+.modal-btn:hover { background: var(--rosa-suave); }
+.modal-peligro { color: var(--rojo); font-weight: bold; }
+@keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes crecer { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* --- Columna central --- */
 .contenido {
     margin-left: 245px;       /* deja espacio para el menú fijo */
@@ -88,16 +147,20 @@ body {
 
         <ul class="menu">
             <li><a href="{% url 'inicio' %}"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
-            <li><a href="#"><i class="bi bi-search"></i> Búsqueda</a></li>
+            <li><a href="{% url 'buscar' %}"><i class="bi bi-search"></i> Búsqueda</a></li>
             <li><a href="#"><i class="bi bi-send"></i> Mensajes</a></li>
             <li>
                 <a href="{% url 'notificaciones' %}" style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <i class="bi bi-heart"></i> Notificaciones
                     </div>
-                    {% if notificaciones_no_leidas > 0 %}
-                        <span style="background: var(--rojo); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">{{ notificaciones_no_leidas }}</span>
-                    {% endif %}
+                    <span id="badge-notis" class="badge-notis" {% if not notificaciones_no_leidas %}hidden{% endif %}>{{ notificaciones_no_leidas }}</span>
+                </a>
+                <!-- Burbuja estilo Instagram: ❤️ 2  👤 1  💬 3 -->
+                <a href="{% url 'notificaciones' %}" id="burbuja-notis" class="burbuja-notis" hidden title="Ver notificaciones">
+                    <span data-tipo="like"><i class="bi bi-heart-fill"></i> <b>0</b></span>
+                    <span data-tipo="seguir"><i class="bi bi-person-fill"></i> <b>0</b></span>
+                    <span data-tipo="comentario"><i class="bi bi-chat-fill"></i> <b>0</b></span>
                 </a>
             </li>
             <li><a href="{% url 'crear' %}"><i class="bi bi-plus-square"></i> Crear</a></li>
@@ -121,10 +184,162 @@ body {
         </div>
     </nav>
 
+    <!-- Ventana para confirmar "dejar de seguir" -->
+    <div id="modal-seguir" class="modal-fondo" hidden>
+        <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="modal-seguir-titulo">
+            <i class="bi bi-person-dash modal-icono"></i>
+            <p id="modal-seguir-titulo" class="modal-titulo">¿Dejar de seguir a <strong id="modal-seguir-nombre"></strong>?</p>
+            <p class="modal-sub">Dejará de aparecer en tu lista de seguidos. Puedes volver a seguirle cuando quieras.</p>
+            <button type="button" class="modal-btn modal-peligro" id="modal-seguir-si">Dejar de seguir</button>
+            <button type="button" class="modal-btn" id="modal-seguir-no">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Avisos emergentes de notificaciones nuevas -->
+    <div id="avisos" class="avisos"></div>
+
     <!-- ===== CONTENIDO PRINCIPAL ===== -->
     <main class="contenido">
         {% block contenido %}{% endblock %}
     </main>
 
+    {% if user.is_authenticated %}
+    <script>
+    // ===== Confirmar antes de dejar de seguir =====
+    // Cualquier formulario con data-dejar-de-seguir="usuario" pregunta antes de enviarse.
+    (function () {
+        const modal = document.getElementById('modal-seguir');
+        const nombre = document.getElementById('modal-seguir-nombre');
+        let formPendiente = null;
+
+        function cerrar() { modal.hidden = true; formPendiente = null; }
+
+        document.addEventListener('submit', function (ev) {
+            const form = ev.target;
+            if (!form.dataset.dejarDeSeguir || form.dataset.confirmado) return;
+            ev.preventDefault();
+            formPendiente = form;
+            nombre.textContent = '@' + form.dataset.dejarDeSeguir;
+            modal.hidden = false;
+            document.getElementById('modal-seguir-no').focus();
+        });
+        document.getElementById('modal-seguir-si').addEventListener('click', function () {
+            if (!formPendiente) return;
+            formPendiente.dataset.confirmado = '1';
+            formPendiente.submit();
+        });
+        document.getElementById('modal-seguir-no').addEventListener('click', cerrar);
+        modal.addEventListener('click', ev => { if (ev.target === modal) cerrar(); });   // clic fuera
+        document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !modal.hidden) cerrar(); });
+    })();
+    </script>
+    <script>
+    // ===== Notificaciones "en vivo" =====
+    // Cada 5 segundos pregunta al servidor (sin recargar) si hay notificaciones nuevas.
+    (function () {
+        const URL_ESTADO = "{% url 'estado_notificaciones' %}";
+        const URL_NOTIS = "{% url 'notificaciones' %}";
+        const badge = document.getElementById('badge-notis');
+        const avisos = document.getElementById('avisos');
+        const enNotificaciones = window.location.pathname === URL_NOTIS;
+        let ultimoId = 0;
+
+        const ICONOS = { like: 'bi-heart-fill', comentario: 'bi-chat-fill', seguir: 'bi-person-plus-fill' };
+
+        function mostrarAviso(n) {
+            // Ventanita en la esquina inferior derecha (todo con textContent para no inyectar HTML)
+            const aviso = document.createElement('div');
+            aviso.className = 'aviso-noti';
+
+            const enlace = document.createElement('a');
+            enlace.className = 'aviso-contenido';
+            enlace.href = n.enlace || URL_NOTIS;
+
+            const caja = document.createElement('span');
+            caja.className = 'aviso-avatar';
+            if (n.foto) {
+                const img = document.createElement('img');
+                img.src = n.foto; img.alt = '';
+                caja.appendChild(img);
+            } else {
+                const yo = document.createElement('i');
+                yo.className = 'bi bi-person-circle';
+                caja.appendChild(yo);
+            }
+            const icono = document.createElement('i');
+            icono.className = 'bi ' + (ICONOS[n.tipo] || 'bi-bell-fill') + ' aviso-icono';
+            caja.appendChild(icono);
+
+            const texto = document.createElement('span');
+            texto.className = 'aviso-texto';
+            const fuerte = document.createElement('strong');
+            fuerte.textContent = n.actor;
+            const ahora = document.createElement('small');
+            ahora.textContent = 'Ahora';
+            texto.append(fuerte, ' ' + n.texto, ahora);
+
+            enlace.append(caja, texto);
+
+            const cerrar = document.createElement('button');
+            cerrar.className = 'aviso-cerrar';
+            cerrar.type = 'button';
+            cerrar.title = 'Cerrar';
+            cerrar.innerHTML = '<i class="bi bi-x-lg"></i>';
+            cerrar.addEventListener('click', () => quitar(aviso));
+
+            aviso.append(enlace, cerrar);
+            avisos.appendChild(aviso);
+            const temporizador = setTimeout(() => quitar(aviso), 6000);
+            aviso.addEventListener('mouseenter', () => clearTimeout(temporizador));  // si pasas el mouse, se queda
+            aviso.addEventListener('mouseleave', () => setTimeout(() => quitar(aviso), 2500));
+        }
+
+        function quitar(aviso) {
+            if (!aviso.isConnected) return;
+            aviso.classList.add('saliendo');
+            setTimeout(() => aviso.remove(), 400);
+        }
+
+        const burbuja = document.getElementById('burbuja-notis');
+        let firmaAnterior = '';
+        function actualizarBurbuja(porTipo) {
+            let hay = false;
+            burbuja.querySelectorAll('[data-tipo]').forEach(el => {
+                const n = porTipo ? (porTipo[el.dataset.tipo] || 0) : 0;
+                el.hidden = n === 0;
+                el.querySelector('b').textContent = n > 99 ? '99+' : n;
+                if (n) hay = true;
+            });
+            burbuja.hidden = !hay;
+            // Si cambió algo, la burbuja "salta" para llamar la atención
+            const firma = JSON.stringify(porTipo);
+            if (hay && firma !== firmaAnterior) {
+                burbuja.classList.remove('saltar'); void burbuja.offsetWidth; burbuja.classList.add('saltar');
+            }
+            firmaAnterior = firma;
+        }
+
+        async function revisar() {
+            if (document.hidden) return;              // no gastar si la pestaña no está visible
+            try {
+                const r = await fetch(URL_ESTADO + '?desde=' + ultimoId, { headers: { 'Accept': 'application/json' } });
+                if (!r.ok) return;
+                const datos = await r.json();
+                if (ultimoId) datos.nuevas.forEach(mostrarAviso);
+                ultimoId = datos.ultimo_id;
+                actualizarBurbuja(enNotificaciones ? null : datos.por_tipo);
+                const total = enNotificaciones ? 0 : datos.no_leidas;
+                badge.textContent = total > 9 ? '9+' : total;
+                badge.hidden = total === 0;
+                document.title = (total ? '(' + total + ') ' : '') + document.title.replace(/^\(\d+\+?\) /, '');
+            } catch (e) { /* sin conexión: se intenta de nuevo luego */ }
+        }
+
+        revisar();
+        setInterval(revisar, 5000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

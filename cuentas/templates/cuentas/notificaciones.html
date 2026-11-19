@@ -3,32 +3,74 @@
 {% block titulo %}Notificaciones - Fotitos{% endblock %}
 
 {% block contenido %}
-<div class="muro" style="max-width: 470px; margin: 0 auto; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 16px;">
+<div class="notis-card">
     <h2>Notificaciones 🔔</h2>
-    <hr style="border: 0; border-top: 1px solid var(--borde); margin-bottom: 12px;">
 
     {% for notif in notificaciones %}
-        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 14px;">
-            {% if notif.tipo == 'like' %}
-                <i class="bi bi-heart-fill" style="color: var(--rosa); font-size: 20px;"></i>
-                <p style="margin: 0;">
-                    <strong>{{ notif.actor.username }}</strong> le dio me gusta a tu publicación.
-                </p>
-            {% elif notif.tipo == 'comentario' %}
-                <i class="bi bi-chat-fill" style="color: var(--rosa); font-size: 20px;"></i>
-                <p style="margin: 0;">
-                    <strong>{{ notif.actor.username }}</strong> comentó en tu publicación.
-                </p>
-            {% elif notif.tipo == 'seguir' %}
-                <i class="bi bi-person-plus-fill" style="color: var(--rosa); font-size: 20px;"></i>
-                <p style="margin: 0;">
-                    <a href="{% url 'perfil' notif.actor.username %}" style="color: inherit; text-decoration: none;"><strong>{{ notif.actor.username }}</strong></a> comenzó a seguirte.
-                </p>
+        <div class="noti">
+            <!-- Foto de quien hizo la acción + ícono del tipo -->
+            <a href="{% url 'perfil' notif.actor.username %}" class="noti-avatar">
+                {% if notif.actor.perfil.foto %}
+                    <img src="{{ notif.actor.perfil.foto.url }}" alt="">
+                {% else %}
+                    <i class="bi bi-person-circle"></i>
+                {% endif %}
+                {% if notif.tipo == 'like' %}<i class="bi bi-heart-fill noti-icono"></i>
+                {% elif notif.tipo == 'comentario' %}<i class="bi bi-chat-fill noti-icono"></i>
+                {% elif notif.tipo == 'seguir' %}<i class="bi bi-person-plus-fill noti-icono"></i>{% endif %}
+            </a>
+
+            <p class="noti-texto">
+                <a href="{% url 'perfil' notif.actor.username %}"><strong>{{ notif.actor.username }}</strong></a>
+                {% if notif.tipo == 'like' %}le dio me gusta a tu publicación.
+                {% elif notif.tipo == 'comentario' %}comentó en tu publicación.
+                {% elif notif.tipo == 'seguir' %}comenzó a seguirte.
+                {% else %}interactuó contigo.{% endif %}
+                <span class="noti-tiempo">hace {{ notif.creado_el|timesince }}</span>
+            </p>
+
+            <!-- A la derecha: miniatura de la publicación o botón para seguir -->
+            {% if notif.tipo == 'seguir' %}
+                <form action="{% url 'seguir' notif.actor.username %}" method="post"
+                      {% if notif.actor_id in mis_seguidos %}data-dejar-de-seguir="{{ notif.actor.username }}"{% endif %}>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    {% if notif.actor_id in mis_seguidos %}
+                        <button type="submit" class="btn-mini"><i class="bi bi-people-fill"></i> Amigos</button>
+                    {% else %}
+                        <button type="submit" class="btn-mini btn-mini-rosa">Seguir también</button>
+                    {% endif %}
+                </form>
+            {% elif notif.publicacion %}
+                <a href="{% url 'publicacion' notif.publicacion.id %}" class="noti-miniatura">
+                    <img src="{{ notif.publicacion.imagen.url }}" alt="Tu publicación">
+                </a>
             {% endif %}
-            <span style="margin-left: auto; color: var(--texto-suave); font-size: 12px;">{{ notif.creado_el|timesince }}</span>
         </div>
     {% empty %}
-        <p style="text-align: center; color: var(--texto-suave); margin-top: 40px;">No tienes notificaciones todavía.</p>
+        <p class="vacio">No tienes notificaciones todavía.</p>
     {% endfor %}
 </div>
+
+<style>
+    .notis-card { width: 100%; max-width: 520px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 20px; }
+    .notis-card h2 { margin: 0 0 10px; padding-bottom: 12px; border-bottom: 1px solid var(--borde); }
+    .noti { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+    .noti:last-child { border-bottom: none; }
+    .noti-avatar { position: relative; flex-shrink: 0; width: 44px; height: 44px; color: var(--rosa); }
+    .noti-avatar img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .noti-avatar > .bi-person-circle { font-size: 44px; line-height: 1; }
+    .noti-icono { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%;
+                  background: var(--rosa); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center;
+                  border: 2px solid var(--tarjeta); }
+    .noti-texto { flex: 1; margin: 0; font-size: 14px; }
+    .noti-texto a { color: inherit; text-decoration: none; }
+    .noti-tiempo { display: block; color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
+    .noti form { margin: 0; }
+    .noti-miniatura img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
+    .btn-mini { padding: 6px 14px; border: none; border-radius: 8px; background: var(--rosa-suave); color: var(--rosa-oscuro);
+                font-weight: bold; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .btn-mini-rosa { background: var(--rosa); color: #fff; }
+    .vacio { text-align: center; color: var(--texto-suave); margin-top: 30px; }
+</style>
 {% endblock %}

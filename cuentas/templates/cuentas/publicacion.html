@@ -1,0 +1,110 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Publicación de {{ publicacion.user.username }} - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="pub-pagina">
+    <a href="{% url 'perfil' publicacion.user.username %}" class="volver-link"><i class="bi bi-arrow-left"></i> Volver al perfil</a>
+
+    <article class="pub-card">
+        <!-- Foto -->
+        <div class="pub-foto">
+            <img src="{{ publicacion.imagen.url }}" alt="Publicación de {{ publicacion.user.username }}">
+        </div>
+
+        <!-- Lado derecho -->
+        <div class="pub-lado">
+            <header class="pub-header">
+                <a href="{% url 'perfil' publicacion.user.username %}" class="autor">
+                    {% if publicacion.user.perfil.foto %}
+                        <img src="{{ publicacion.user.perfil.foto.url }}" alt="" class="avatar">
+                    {% else %}
+                        <i class="bi bi-person-circle"></i>
+                    {% endif %}
+                    <strong>{{ publicacion.user.username }}</strong>
+                </a>
+                {% if es_mia %}
+                    <form action="{% url 'eliminar_publicacion' publicacion.id %}" method="post"
+                          onsubmit="return confirm('¿Eliminar esta publicación? No se puede deshacer.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-eliminar" title="Eliminar publicación"><i class="bi bi-trash3"></i></button>
+                    </form>
+                {% endif %}
+            </header>
+
+            <div class="pub-comentarios">
+                {% if publicacion.descripcion %}
+                    <p class="comentario"><strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion|linebreaksbr }}</p>
+                {% endif %}
+                {% for comentario in comentarios %}
+                    <p class="comentario">
+                        <a href="{% url 'perfil' comentario.user.username %}"><strong>{{ comentario.user.username }}</strong></a>
+                        {{ comentario.texto }}
+                        <span class="hace">hace {{ comentario.creado_el|timesince }}</span>
+                    </p>
+                {% empty %}
+                    {% if not publicacion.descripcion %}
+                        <p class="sin-comentarios">Todavía no hay comentarios.<br>¡Sé la primera persona en comentar! 💬</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="pub-acciones">
+                <a href="{% url 'dar_like' publicacion.id %}?next={{ request.path|urlencode }}" class="accion">
+                    {% if le_di_like %}
+                        <i class="bi bi-heart-fill" style="color: var(--rosa);"></i>
+                    {% else %}
+                        <i class="bi bi-heart"></i>
+                    {% endif %}
+                </a>
+                <a href="#" class="accion" onclick="document.getElementById('comentario-detalle').focus(); return false;"><i class="bi bi-chat"></i></a>
+                <span class="contador"><strong>{{ publicacion.total_likes }}</strong> me gusta</span>
+                <span class="fecha">hace {{ publicacion.creado_el|timesince }}</span>
+            </div>
+
+            <form action="{% url 'agregar_comentario' publicacion.id %}" method="post" class="pub-form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                {% include 'cuentas/_emojis.html' %}
+                <input id="comentario-detalle" type="text" name="texto" placeholder="Agrega un comentario..." required autocomplete="off">
+                <button type="submit">Publicar</button>
+            </form>
+        </div>
+    </article>
+</div>
+
+<style>
+    .pub-pagina { width: 100%; max-width: 935px; }
+    .volver-link { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-suave); text-decoration: none; font-size: 14px; margin-bottom: 12px; }
+    .volver-link:hover { color: var(--rosa-oscuro); }
+    .pub-card { display: grid; grid-template-columns: 1.4fr 1fr; background: var(--tarjeta); border: 1px solid var(--borde);
+                border-radius: 16px; overflow: hidden; min-height: 520px; }
+    .pub-foto { background: #1b0f15; display: flex; align-items: center; justify-content: center; }
+    .pub-foto img { width: 100%; max-height: 80vh; object-fit: contain; display: block; }
+    .pub-lado { display: flex; flex-direction: column; border-left: 1px solid var(--borde); min-width: 0; }
+    .pub-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--borde); }
+    .pub-header form { margin: 0; }
+    .autor { display: flex; align-items: center; gap: 10px; color: var(--texto); text-decoration: none; }
+    .autor i { font-size: 32px; color: var(--rosa); line-height: 1; }
+    .autor .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .btn-eliminar { background: none; border: none; color: var(--texto-suave); font-size: 18px; cursor: pointer; padding: 6px; border-radius: 8px; }
+    .btn-eliminar:hover { color: var(--rojo); background: #fde2e6; }
+    .pub-comentarios { flex: 1; overflow-y: auto; padding: 12px 16px; max-height: 55vh; }
+    .comentario { margin: 0 0 12px; font-size: 14px; word-wrap: break-word; }
+    .comentario a { color: inherit; text-decoration: none; }
+    .hace { display: block; color: var(--texto-suave); font-size: 11px; margin-top: 2px; }
+    .sin-comentarios { text-align: center; color: var(--texto-suave); margin-top: 40px; font-size: 14px; }
+    .pub-acciones { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--borde); flex-wrap: wrap; }
+    .accion { color: var(--texto); font-size: 24px; text-decoration: none; }
+    .accion:hover { color: var(--rosa); }
+    .contador { font-size: 14px; }
+    .fecha { margin-left: auto; color: var(--texto-suave); font-size: 12px; }
+    .pub-form { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--borde); }
+    .pub-form input[type="text"] { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: var(--texto); font-family: inherit; }
+    .pub-form button[type="submit"] { background: none; border: none; color: var(--rosa); font-weight: bold; cursor: pointer; font-family: inherit; }
+    @media (max-width: 800px) {
+        .pub-card { grid-template-columns: 1fr; }
+        .pub-lado { border-left: none; border-top: 1px solid var(--borde); }
+    }
+</style>
+{% endblock %}

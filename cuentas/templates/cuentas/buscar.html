@@ -1,0 +1,91 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Búsqueda - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="buscar-card">
+    <h2>Búsqueda</h2>
+
+    <form method="get" class="buscador" id="form-buscar">
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" id="q" value="{{ consulta }}" placeholder="Buscar usuarios..." autocomplete="off" autofocus>
+        {% if consulta %}<a href="{% url 'buscar' %}" class="limpiar" title="Borrar"><i class="bi bi-x-circle-fill"></i></a>{% endif %}
+    </form>
+
+    <h3 class="subtitulo">
+        {% if sugerencias %}Sugerencias para ti{% else %}Resultados para "{{ consulta }}"{% endif %}
+    </h3>
+
+    {% for persona in personas %}
+        <div class="persona">
+            <a href="{% url 'perfil' persona.username %}" class="persona-info">
+                {% if persona.perfil.foto %}
+                    <img src="{{ persona.perfil.foto.url }}" alt="">
+                {% else %}
+                    <i class="bi bi-person-circle"></i>
+                {% endif %}
+                <div>
+                    <strong>{{ persona.username }}</strong><br>
+                    <span>
+                        {{ persona.first_name }} {{ persona.last_name }}
+                        {% if persona.id in me_siguen %}· Te sigue{% endif %}
+                    </span>
+                </div>
+            </a>
+            <form action="{% url 'seguir' persona.username %}" method="post"
+                  {% if persona.id in mis_seguidos %}data-dejar-de-seguir="{{ persona.username }}"{% endif %}>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                {% if persona.id in mis_seguidos %}
+                    <button type="submit" class="btn-mini">
+                        {% if persona.id in me_siguen %}<i class="bi bi-people-fill"></i> Amigos{% else %}Siguiendo{% endif %}
+                    </button>
+                {% else %}
+                    <button type="submit" class="btn-mini btn-mini-rosa">
+                        {% if persona.id in me_siguen %}Seguir también{% else %}Seguir{% endif %}
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    {% empty %}
+        <p class="vacio-lista">
+            {% if sugerencias %}¡Ya sigues a todos! 🎉 Invita a más amigos a Fotitos.
+            {% else %}No encontramos a nadie con "{{ consulta }}" 🔍{% endif %}
+        </p>
+    {% endfor %}
+</div>
+
+<style>
+    .buscar-card { width: 100%; max-width: 470px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 20px; }
+    .buscar-card h2 { margin: 0 0 14px; }
+    .buscador { position: relative; display: flex; align-items: center; }
+    .buscador > i { position: absolute; left: 14px; color: var(--texto-suave); }
+    .buscador input { width: 100%; padding: 11px 40px; border: 1px solid var(--borde); border-radius: 10px;
+                      background: var(--fondo); color: var(--texto); font-size: 15px; font-family: inherit; }
+    .buscador input:focus { outline: none; border-color: var(--rosa); }
+    .buscador input::-webkit-search-cancel-button { display: none; }
+    .limpiar { position: absolute; right: 12px; color: var(--texto-suave); }
+    .subtitulo { font-size: 14px; color: var(--texto-suave); margin: 18px 0 6px; }
+    .persona { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .persona form { margin: 0; }
+    .persona-info { display: flex; align-items: center; gap: 12px; color: var(--texto); text-decoration: none; font-size: 14px; }
+    .persona-info img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .persona-info i { font-size: 44px; color: var(--rosa); line-height: 1; }
+    .persona-info span { color: var(--texto-suave); font-size: 13px; }
+    .btn-mini { padding: 6px 14px; border: none; border-radius: 8px; background: var(--rosa-suave); color: var(--rosa-oscuro); font-weight: bold; cursor: pointer; font-family: inherit; }
+    .btn-mini-rosa { background: var(--rosa); color: #fff; }
+    .vacio-lista { text-align: center; color: var(--texto-suave); margin: 30px 0; }
+</style>
+
+<script>
+    // Busca solo mientras escribes (espera 400 ms después de la última tecla)
+    const q = document.getElementById('q');
+    let espera;
+    q.addEventListener('input', () => {
+        clearTimeout(espera);
+        espera = setTimeout(() => document.getElementById('form-buscar').submit(), 400);
+    });
+    // Deja el cursor al final del texto al recargar
+    q.setSelectionRange(q.value.length, q.value.length);
+</script>
+{% endblock %}

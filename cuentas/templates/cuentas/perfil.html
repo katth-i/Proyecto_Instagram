@@ -27,7 +27,8 @@
                 {% if es_mi_perfil %}
                     <a href="{% url 'editar_perfil' %}" class="btn-perfil">Editar perfil</a>
                 {% else %}
-                    <form action="{% url 'seguir' usuario_perfil.username %}" method="post">
+                    <form action="{% url 'seguir' usuario_perfil.username %}" method="post"
+                          {% if lo_sigo %}data-dejar-de-seguir="{{ usuario_perfil.username }}"{% endif %}>
                         {% csrf_token %}
                         {% if lo_sigo %}
                             <button type="submit" class="btn-perfil">
@@ -76,14 +77,14 @@
                 </a>
             {% endif %}
             {% for publicacion in publicaciones %}
-                <div class="celda">
+                <a href="{% url 'publicacion' publicacion.id %}" class="celda">
                     <img src="{{ publicacion.imagen.url }}" alt="Publicación de {{ usuario_perfil.username }}">
                     <!-- Capa que aparece al pasar el mouse -->
                     <div class="celda-capa">
                         <span><i class="bi bi-heart-fill"></i> {{ publicacion.num_likes }}</span>
                         <span><i class="bi bi-chat-fill"></i> {{ publicacion.num_comentarios }}</span>
                     </div>
-                </div>
+                </a>
             {% endfor %}
         </div>
     {% else %}

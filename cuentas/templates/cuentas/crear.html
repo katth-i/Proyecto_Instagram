@@ -25,7 +25,10 @@
         </label>
         <input type="file" id="imagen" name="imagen" accept="image/jpeg,image/png,image/webp,image/gif" required hidden>
 
-        <textarea name="descripcion" rows="4" placeholder="Escribe una descripción...">{{ form.descripcion.value|default:'' }}</textarea>
+        <textarea id="descripcion" name="descripcion" rows="4" placeholder="Escribe una descripción...">{{ form.descripcion.value|default:'' }}</textarea>
+        <div class="barra-texto">
+            {% include 'cuentas/_emojis.html' with destino='descripcion' %}
+        </div>
 
         <button type="submit" class="btn-publicar">Publicar</button>
     </form>
@@ -47,6 +50,7 @@
         background: var(--fondo); color: var(--texto); border: 1px solid var(--borde);
         border-radius: 10px; font-family: inherit; font-size: 15px; resize: vertical;
     }
+    .barra-texto { display: flex; align-items: center; margin-top: 4px; }
     textarea:focus { outline: none; border-color: var(--rosa); }
     .btn-publicar {
         width: 100%; margin-top: 16px; padding: 12px;

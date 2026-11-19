@@ -1,0 +1,98 @@
+{% comment %}
+  Selector de emojis reutilizable.
+  Uso: {% include 'cuentas/_emojis.html' with destino='id-del-textarea' %}
+  Sin 'destino', escribe en el primer campo de texto del mismo formulario.
+{% endcomment %}
+<div class="emoji-selector" data-destino="{{ destino }}">
+    <button type="button" class="emoji-boton" title="Agregar emoji">😊</button>
+    <div class="emoji-panel" hidden>
+        <div class="emoji-tabs">
+            <button type="button" data-cat="caras" class="activa">😀</button>
+            <button type="button" data-cat="amor">❤️</button>
+            <button type="button" data-cat="gestos">👍</button>
+            <button type="button" data-cat="naturaleza">🌸</button>
+            <button type="button" data-cat="comida">🍕</button>
+            <button type="button" data-cat="actividades">🎉</button>
+            <button type="button" data-cat="viajes">✈️</button>
+        </div>
+        <div class="emoji-grid"></div>
+    </div>
+</div>
+
+<style>
+    .emoji-selector { position: relative; display: inline-block; }
+    .emoji-boton { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px 6px; border-radius: 8px; line-height: 1; }
+    .emoji-boton:hover { background: var(--rosa-suave); }
+    .emoji-panel { position: absolute; z-index: 50; bottom: calc(100% + 6px); left: 0; width: 300px;
+                   background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px;
+                   box-shadow: 0 8px 24px rgba(74, 43, 58, 0.15); padding: 8px; }
+    .emoji-tabs { display: flex; justify-content: space-between; border-bottom: 1px solid var(--borde); padding-bottom: 6px; margin-bottom: 6px; }
+    .emoji-tabs button { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 8px; opacity: .55; }
+    .emoji-tabs button.activa, .emoji-tabs button:hover { opacity: 1; background: var(--rosa-suave); }
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 190px; overflow-y: auto; }
+    .emoji-grid button { background: none; border: none; font-size: 22px; cursor: pointer; padding: 3px; border-radius: 6px; line-height: 1.2; }
+    .emoji-grid button:hover { background: var(--rosa-suave); transform: scale(1.15); }
+</style>
+
+<script>
+(function () {
+    // Se define una sola vez aunque el selector aparezca varias veces en la página
+    if (window.__emojisListos) return;
+    window.__emojisListos = true;
+
+    const EMOJIS = {
+        caras: '😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 😉 😍 🥰 😘 😋 😛 😜 🤪 😎 🤩 🥳 😏 😌 😴 🤔 🤭 🤫 😶 🙄 😬 😢 😭 😤 😡 🥺 😱 😳 🤯 🤗 😮 🥹 🫠 🤓 😇 🤠'.split(' '),
+        amor: '❤️ 🩷 🧡 💛 💚 💙 🩵 💜 🤍 🖤 🤎 💕 💞 💓 💗 💖 💘 💝 💟 ❣️ 💌 💋 😻 🫶 💐 🌹 💍 ✨'.split(' '),
+        gestos: '👍 👎 👌 ✌️ 🤞 🤟 🤘 🤙 👋 🙌 👏 🙏 💪 ✍️ 💅 🫡 🤝 👀 🙈 🙉 🙊 💯 🔥 ⭐ 🌟 💫 ✅ ❌'.split(' '),
+        naturaleza: '🌸 🌷 🌺 🌻 🌼 🌹 🍀 🌿 🌱 🌳 🌴 🌵 🍁 🍂 🌈 ☀️ 🌙 ⭐ ☁️ ❄️ 🌊 🐶 🐱 🐰 🐻 🐼 🦋 🐝 🐢 🦄'.split(' '),
+        comida: '🍕 🍔 🍟 🌮 🍣 🍜 🍝 🥗 🍰 🎂 🧁 🍩 🍪 🍫 🍬 🍭 🍦 🍓 🍒 🍉 🍑 🍍 🥑 ☕ 🧋 🍵 🥤 🍷 🍹 🥂'.split(' '),
+        actividades: '🎉 🎊 🎈 🎁 🎀 🎶 🎵 🎤 🎧 🎸 🎮 📸 🎨 📚 ✏️ 💻 📱 ⚽ 🏀 🏐 🎾 🏆 🥇 💃 🕺 🧘 🏃 🎬 🍿 🛍️'.split(' '),
+        viajes: '✈️ 🚗 🚌 🚲 🏖️ 🏝️ 🏔️ ⛰️ 🌋 🏕️ 🗺️ 🧳 🌍 🏙️ 🌆 🌃 🎡 🎢 🗽 🏰 ⛪ 🇪🇨 📍 🧭 🌅 🌄 🚀 🛸 ⛵ 🚢'.split(' '),
+    };
+
+    function insertar(campo, emoji) {
+        const inicio = campo.selectionStart ?? campo.value.length;
+        const fin = campo.selectionEnd ?? campo.value.length;
+        if (campo.maxLength > 0 && campo.value.length + emoji.length > campo.maxLength) return;
+        campo.value = campo.value.slice(0, inicio) + emoji + campo.value.slice(fin);
+        const pos = inicio + emoji.length;
+        campo.focus();
+        campo.setSelectionRange(pos, pos);
+        campo.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function pintar(selector, cat) {
+        const grid = selector.querySelector('.emoji-grid');
+        grid.innerHTML = '';
+        EMOJIS[cat].forEach(e => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = e;
+            b.addEventListener('click', () => {
+                const campo = document.getElementById(selector.dataset.destino)
+                    || selector.closest('form').querySelector('input[type="text"], textarea');
+                if (campo) insertar(campo, e);
+            });
+            grid.appendChild(b);
+        });
+        selector.querySelectorAll('.emoji-tabs button').forEach(t => t.classList.toggle('activa', t.dataset.cat === cat));
+    }
+
+    document.addEventListener('click', function (ev) {
+        const boton = ev.target.closest('.emoji-boton');
+        const tab = ev.target.closest('.emoji-tabs button');
+        if (tab) { pintar(tab.closest('.emoji-selector'), tab.dataset.cat); return; }
+        if (boton) {
+            const selector = boton.closest('.emoji-selector');
+            const panel = selector.querySelector('.emoji-panel');
+            const abrir = panel.hidden;
+            document.querySelectorAll('.emoji-panel').forEach(p => p.hidden = true);  // cierra otros
+            if (abrir) { pintar(selector, 'caras'); panel.hidden = false; }
+            return;
+        }
+        // Clic fuera: cerrar
+        if (!ev.target.closest('.emoji-panel')) document.querySelectorAll('.emoji-panel').forEach(p => p.hidden = true);
+    });
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape') document.querySelectorAll('.emoji-panel').forEach(p => p.hidden = true); });
+})();
+</script>

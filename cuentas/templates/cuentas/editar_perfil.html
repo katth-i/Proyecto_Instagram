@@ -42,8 +42,9 @@
         {% endif %}
 
         <label class="campo">Biografía
-            <textarea name="bio" rows="3" maxlength="150" placeholder="Cuéntale algo a la gente sobre ti...">{{ form_perfil.bio.value|default:'' }}</textarea>
+            <textarea id="bio" name="bio" rows="3" maxlength="150" placeholder="Cuéntale algo a la gente sobre ti...">{{ form_perfil.bio.value|default:'' }}</textarea>
         </label>
+        <div style="margin: -8px 0 10px;">{% include 'cuentas/_emojis.html' with destino='bio' %}</div>
         {% if form_perfil.bio.errors %}<p class="error">{{ form_perfil.bio.errors.0 }}</p>{% endif %}
 
         <button type="submit" class="btn-guardar">Guardar cambios</button>
