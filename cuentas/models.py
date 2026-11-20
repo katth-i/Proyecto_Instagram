@@ -119,3 +119,30 @@ class Reporte(models.Model):
 
     def __str__(self):
         return f"Reporte de {self.usuario.username} a la publicación {self.publicacion_id} ({self.get_motivo_display()})"
+
+
+
+class MejorAmigo(models.Model):
+    """'user' tiene a 'amigo' en su lista de mejores amigos ⭐ (solo 'user' ve su lista)."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mejores_amigos')
+    amigo = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mejor_amigo_de')
+    creado_el = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'amigo'], name='mejor_amigo_unico')]
+
+    def __str__(self):
+        return f"{self.amigo.username} es mejor amigo de {self.user.username}"
+
+
+class Silenciado(models.Model):
+    """'user' silenció a 'silenciado': sus publicaciones no aparecen en el feed de 'user'."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='silencios')
+    silenciado = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='silenciado_por')
+    creado_el = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'silenciado'], name='silenciado_unico')]
+
+    def __str__(self):
+        return f"{self.user.username} silenció a {self.silenciado.username}"

@@ -12,7 +12,7 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 from .forms import RegistroForm, PublicacionForm, UsuarioEditForm, PerfilEditForm
-from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento, Guardado, Reporte
+from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento, Guardado, Reporte, MejorAmigo, Silenciado
 
 
 def _es_ajax(request):
@@ -98,7 +98,10 @@ def login_view(request):
 def inicio(request):
     # Obtenemos todas las publicaciones de la base de datos (ordenadas de la más nueva a la más vieja)
     # Las publicaciones ocultas por moderación no aparecen en el feed
-    publicaciones = Publicacion.objects.filter(oculta=False).order_by('-id')
+    # Las publicaciones ocultas por moderación y las de cuentas silenciadas no aparecen en el feed
+    publicaciones = (Publicacion.objects.filter(oculta=False)
+                     .exclude(user__silenciado_por__user=request.user)
+                     .order_by('-id'))
     return render(request, 'cuentas/inicio.html', {
         'publicaciones': publicaciones,
         'mis_guardados': set(request.user.guardados.values_list('publicacion_id', flat=True)),
@@ -223,6 +226,9 @@ def ver_perfil(request, username):
         # ¿Yo lo sigo? ¿Él me sigue? (si ambos: son amigos)
         'lo_sigo': Seguimiento.objects.filter(seguidor=request.user, seguido=usuario).exists(),
         'me_sigue': Seguimiento.objects.filter(seguidor=usuario, seguido=request.user).exists(),
+        'es_mejor_amigo': MejorAmigo.objects.filter(user=request.user, amigo=usuario).exists(),
+        'esta_silenciado': Silenciado.objects.filter(user=request.user, silenciado=usuario).exists(),
+        'num_mejores_amigos': request.user.mejores_amigos.count() if request.user == usuario else 0,
     }
     return render(request, 'cuentas/perfil.html', contexto)
 
@@ -562,3 +568,56 @@ def moderar_publicacion(request, publicacion_id):
         pendientes.update(estado='descartado')
         messages.success(request, 'Reportes descartados. La publicación sigue visible.')
     return redirect('moderacion')
+
+
+
+# ======================= MEJORES AMIGOS Y SILENCIAR =======================
+
+@login_required
+@require_POST
+def alternar_mejor_amigo(request, username):
+    """Añadir / quitar de mi lista de mejores amigos ⭐."""
+    usuario = get_object_or_404(User, username=username)
+    if usuario == request.user:
+        return JsonResponse({'ok': False}, status=400)
+    relacion = MejorAmigo.objects.filter(user=request.user, amigo=usuario)
+    if relacion.exists():
+        relacion.delete()
+        es_mejor = False
+    else:
+        MejorAmigo.objects.create(user=request.user, amigo=usuario)
+        es_mejor = True
+    if _es_ajax(request):
+        return JsonResponse({'ok': True, 'mejor_amigo': es_mejor})
+    return _volver(request, reverse('perfil', args=[usuario.username]))
+
+
+@login_required
+@require_POST
+def alternar_silenciar(request, username):
+    """Silenciar / dejar de silenciar: sus publicaciones no salen en mi feed (no se entera)."""
+    usuario = get_object_or_404(User, username=username)
+    if usuario == request.user:
+        return JsonResponse({'ok': False}, status=400)
+    relacion = Silenciado.objects.filter(user=request.user, silenciado=usuario)
+    if relacion.exists():
+        relacion.delete()
+        silenciado = False
+    else:
+        Silenciado.objects.create(user=request.user, silenciado=usuario)
+        silenciado = True
+    if _es_ajax(request):
+        return JsonResponse({'ok': True, 'silenciado': silenciado})
+    return _volver(request, reverse('perfil', args=[usuario.username]))
+
+
+@never_cache
+@login_required
+def mejores_amigos(request):
+    """Mi lista de mejores amigos (privada) + sugerencias de gente que sigo."""
+    lista = (User.objects.filter(mejor_amigo_de__user=request.user)
+             .select_related('perfil').order_by('username'))
+    sugerencias = (User.objects.filter(seguidores__seguidor=request.user)
+                   .exclude(mejor_amigo_de__user=request.user)
+                   .select_related('perfil').order_by('username')[:30])
+    return render(request, 'cuentas/mejores_amigos.html', {'lista': lista, 'sugerencias': sugerencias})

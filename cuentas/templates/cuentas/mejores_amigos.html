@@ -1,0 +1,77 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Mejores amigos - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="ma-card">
+    <div class="ma-cabecera">
+        <a href="{% url 'perfil' user.username %}" class="volver"><i class="bi bi-arrow-left"></i></a>
+        <h2><span class="estrella"><i class="bi bi-star-fill"></i></span> Mejores amigos</h2>
+    </div>
+    <p class="ma-intro">Tu lista es privada: nadie sabe que está en ella. Más adelante podrás compartir historias solo con estas personas.</p>
+
+    <h3 class="sub">Tu lista · <span id="total-lista">{{ lista|length }}</span></h3>
+    <div id="lista">
+        {% for persona in lista %}
+            {% include 'cuentas/_fila_mejor_amigo.html' with persona=persona es_mejor=True %}
+        {% empty %}
+            <p class="vacio" id="lista-vacia">Todavía no agregaste a nadie. Elige personas de las sugerencias 👇</p>
+        {% endfor %}
+    </div>
+
+    <h3 class="sub">Sugerencias (gente que sigues)</h3>
+    <div id="sugerencias">
+        {% for persona in sugerencias %}
+            {% include 'cuentas/_fila_mejor_amigo.html' with persona=persona es_mejor=False %}
+        {% empty %}
+            <p class="vacio">Sigue a más personas para agregarlas a tu lista.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .ma-card { width: 100%; max-width: 480px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 20px; }
+    .ma-cabecera { display: flex; align-items: center; gap: 12px; }
+    .ma-cabecera h2 { margin: 0; display: flex; align-items: center; gap: 10px; }
+    .estrella { width: 32px; height: 32px; border-radius: 50%; background: #1fb954; color: #fff; display: inline-flex;
+                align-items: center; justify-content: center; font-size: 15px; }
+    .volver { color: var(--texto); font-size: 22px; }
+    .ma-intro { color: var(--texto-suave); font-size: 13px; margin: 8px 0 4px; }
+    .sub { font-size: 14px; color: var(--texto-suave); margin: 18px 0 6px; }
+    .fila { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .fila-info { display: flex; align-items: center; gap: 12px; color: var(--texto); text-decoration: none; font-size: 14px; }
+    .fila-info img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .fila-info > i { font-size: 44px; color: var(--rosa); line-height: 1; }
+    .fila-info span { color: var(--texto-suave); font-size: 13px; }
+    .btn-circulo { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--texto-suave); background: none; cursor: pointer;
+                   display: flex; align-items: center; justify-content: center; color: var(--texto-suave); font-size: 14px; }
+    .btn-circulo.activo { background: #1fb954; border-color: #1fb954; color: #fff; }
+    .vacio { color: var(--texto-suave); font-size: 14px; text-align: center; margin: 14px 0; }
+</style>
+
+<script>
+(function () {
+    function csrf() {
+        const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+    document.addEventListener('click', async function (ev) {
+        const boton = ev.target.closest('.btn-circulo');
+        if (!boton) return;
+        boton.disabled = true;
+        try {
+            const r = await fetch(boton.dataset.url, { method: 'POST', headers: { 'X-Requested-With': 'fetch', 'X-CSRFToken': csrf() } });
+            const d = await r.json();
+            boton.classList.toggle('activo', d.mejor_amigo);
+            boton.querySelector('i').className = 'bi ' + (d.mejor_amigo ? 'bi-star-fill' : 'bi-plus-lg');
+            // Mover la fila a la sección que corresponde
+            const fila = boton.closest('.fila');
+            const destino = document.getElementById(d.mejor_amigo ? 'lista' : 'sugerencias');
+            destino.querySelectorAll('.vacio').forEach(v => v.remove());
+            destino.prepend(fila);
+            document.getElementById('total-lista').textContent = document.querySelectorAll('#lista .fila').length;
+        } finally { boton.disabled = false; }
+    });
+})();
+</script>
+{% endblock %}

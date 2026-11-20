@@ -27,19 +27,21 @@
                 {% if es_mi_perfil %}
                     <a href="{% url 'editar_perfil' %}" class="btn-perfil">Editar perfil</a>
                 {% else %}
-                    <form action="{% url 'seguir' usuario_perfil.username %}" method="post"
-                          {% if lo_sigo %}data-dejar-de-seguir="{{ usuario_perfil.username }}"{% endif %}>
-                        {% csrf_token %}
-                        {% if lo_sigo %}
-                            <button type="submit" class="btn-perfil">
-                                {% if me_sigue %}<i class="bi bi-people-fill"></i> Amigos{% else %}Siguiendo{% endif %}
-                            </button>
-                        {% else %}
+                    {% if lo_sigo %}
+                        <!-- Como en Instagram: "Amigos ⌄" abre un menú de opciones (no deja de seguir de golpe) -->
+                        <button type="button" class="btn-perfil" id="abrir-opciones">
+                            {% if me_sigue %}<i class="bi bi-people-fill"></i> Amigos{% else %}Siguiendo{% endif %}
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        {% if es_mejor_amigo %}<span class="chip-mejor" title="Está en tu lista de mejores amigos"><i class="bi bi-star-fill"></i></span>{% endif %}
+                    {% else %}
+                        <form action="{% url 'seguir' usuario_perfil.username %}" method="post">
+                            {% csrf_token %}
                             <button type="submit" class="btn-perfil btn-seguir">
                                 {% if me_sigue %}Seguir también{% else %}Seguir{% endif %}
                             </button>
-                        {% endif %}
-                    </form>
+                        </form>
+                    {% endif %}
                 {% endif %}
             </div>
 
@@ -57,6 +59,9 @@
             {% endif %}
             {% if perfil and perfil.bio %}
                 <p class="perfil-bio">{{ perfil.bio|linebreaksbr }}</p>
+            {% endif %}
+            {% if es_mi_perfil %}
+                <a href="{% url 'mejores_amigos' %}" class="link-mejores"><i class="bi bi-star-fill"></i> Mejores amigos · {{ num_mejores_amigos }}</a>
             {% endif %}
         </div>
     </header>
@@ -103,6 +108,118 @@
         </div>
     {% endif %}
 </div>
+
+{% if lo_sigo and not es_mi_perfil %}
+<div id="hoja-opciones" class="hoja-fondo" hidden>
+    <div class="hoja" role="dialog" aria-modal="true">
+        <button type="button" class="hoja-cerrar" data-cerrar title="Cerrar"><i class="bi bi-x-lg"></i></button>
+        <div class="hoja-cabecera">
+            {% if perfil and perfil.foto %}
+                <img src="{{ perfil.foto.url }}" alt="">
+            {% else %}
+                <i class="bi bi-person-circle"></i>
+            {% endif %}
+            <strong>{{ usuario_perfil.username }}</strong>
+        </div>
+
+        <button type="button" class="hoja-opcion js-alternar" data-url="{% url 'mejor_amigo' usuario_perfil.username %}"
+                data-campo="mejor_amigo" data-si="Quitar de la lista de mejores amigos" data-no="Añadir a la lista de mejores amigos"
+                data-icono-si="bi-star-fill" data-icono-no="bi-star">
+            <span class="js-texto">{% if es_mejor_amigo %}Quitar de la lista de mejores amigos{% else %}Añadir a la lista de mejores amigos{% endif %}</span>
+            <span class="hoja-icono-circulo {% if es_mejor_amigo %}activo{% endif %}"><i class="bi {% if es_mejor_amigo %}bi-star-fill{% else %}bi-star{% endif %} js-icono"></i></span>
+        </button>
+
+        <button type="button" class="hoja-opcion js-alternar" data-url="{% url 'silenciar' usuario_perfil.username %}"
+                data-campo="silenciado" data-si="Dejar de silenciar" data-no="Silenciar publicaciones"
+                data-icono-si="bi-bell-slash-fill" data-icono-no="bi-bell-slash">
+            <span>
+                <span class="js-texto">{% if esta_silenciado %}Dejar de silenciar{% else %}Silenciar publicaciones{% endif %}</span>
+                <small>No verás sus publicaciones en tu inicio. No se enterará.</small>
+            </span>
+            <i class="bi {% if esta_silenciado %}bi-bell-slash-fill{% else %}bi-bell-slash{% endif %} js-icono"></i>
+        </button>
+
+        <a href="{% url 'mejores_amigos' %}" class="hoja-opcion">
+            <span>Ver mi lista de mejores amigos</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+
+        <form action="{% url 'seguir' usuario_perfil.username %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="hoja-opcion hoja-peligro">Dejar de seguir</button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const hoja = document.getElementById('hoja-opciones');
+    const abrir = document.getElementById('abrir-opciones');
+    const cerrar = () => { hoja.hidden = true; };
+    abrir.addEventListener('click', () => { hoja.hidden = false; });
+    hoja.addEventListener('click', ev => { if (ev.target === hoja || ev.target.closest('[data-cerrar]')) cerrar(); });
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cerrar(); });
+    // Al cerrar, recargar si algo cambió (para que se vea la ⭐ junto al botón)
+    let cambio = false;
+    new MutationObserver(() => { if (hoja.hidden && cambio) location.reload(); }).observe(hoja, { attributes: true, attributeFilter: ['hidden'] });
+
+    function csrf() {
+        const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+    hoja.querySelectorAll('.js-alternar').forEach(boton => {
+        boton.addEventListener('click', async () => {
+            boton.disabled = true;
+            try {
+                const r = await fetch(boton.dataset.url, { method: 'POST', headers: { 'X-Requested-With': 'fetch', 'X-CSRFToken': csrf() } });
+                const d = await r.json();
+                const activo = d[boton.dataset.campo];
+                boton.querySelector('.js-texto').textContent = activo ? boton.dataset.si : boton.dataset.no;
+                boton.querySelector('.js-icono').className = 'bi ' + (activo ? boton.dataset.iconoSi : boton.dataset.iconoNo) + ' js-icono';
+                const circulo = boton.querySelector('.hoja-icono-circulo');
+                if (circulo) circulo.classList.toggle('activo', activo);
+                cambio = true;
+                if (window.avisoSimple) {
+                    window.avisoSimple(boton.dataset.campo === 'mejor_amigo'
+                        ? (activo ? '⭐ Añadido a mejores amigos' : 'Quitado de mejores amigos')
+                        : (activo ? '🔕 Silenciado: no verás sus publicaciones en tu inicio' : 'Ya no está silenciado'));
+                }
+            } finally { boton.disabled = false; }
+        });
+    });
+})();
+</script>
+{% endif %}
+
+<style>
+    /* Hoja de opciones estilo Instagram */
+    .hoja-fondo { position: fixed; inset: 0; z-index: 200; background: rgba(74, 43, 58, 0.45);
+                  display: flex; align-items: center; justify-content: center; animation: aparecer .15s ease-out; }
+    .hoja-fondo[hidden] { display: none; }
+    .hoja { position: relative; width: 420px; max-width: 92vw; background: var(--tarjeta); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(74, 43, 58, 0.3); animation: crecer .2s ease-out; }
+    .hoja-cerrar { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--texto); }
+    .hoja-cabecera { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 16px 16px; border-bottom: 1px solid var(--borde); }
+    .hoja-cabecera img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
+    .hoja-cabecera > i { font-size: 72px; color: var(--rosa); line-height: 1; }
+    .hoja-opcion { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 16px 20px;
+                   background: none; border: none; border-bottom: 1px solid var(--borde); text-align: left; cursor: pointer;
+                   font-family: inherit; font-size: 15px; color: var(--texto); text-decoration: none; }
+    .hoja-opcion:hover { background: var(--rosa-suave); }
+    .hoja-opcion small { display: block; color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
+    .hoja-opcion > i { font-size: 20px; color: var(--texto-suave); }
+    .hoja form { margin: 0; }
+    .hoja-peligro { color: var(--rojo); font-weight: bold; border-bottom: none; }
+    .hoja-icono-circulo { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--texto); display: flex;
+                          align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .hoja-icono-circulo.activo { background: #1fb954; border-color: #1fb954; color: #fff; }
+    .chip-mejor { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%;
+                  background: #1fb954; color: #fff; font-size: 14px; }
+    .link-mejores { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; font-weight: bold;
+                    color: #1a9a46; text-decoration: none; background: #e3f7ea; padding: 4px 12px; border-radius: 20px; }
+    .link-mejores:hover { background: #cdf0d9; }
+    #abrir-opciones .bi-chevron-down { font-size: 12px; margin-left: 2px; }
+</style>
 
 <style>
     .perfil-pagina { width: 100%; max-width: 935px; }

@@ -1,0 +1,10 @@
+<div class="fila">
+    <a href="{% url 'perfil' persona.username %}" class="fila-info">
+        {% if persona.perfil.foto %}<img src="{{ persona.perfil.foto.url }}" alt="">{% else %}<i class="bi bi-person-circle"></i>{% endif %}
+        <div><strong>{{ persona.username }}</strong><br><span>{{ persona.first_name }} {{ persona.last_name }}</span></div>
+    </a>
+    <button type="button" class="btn-circulo {% if es_mejor %}activo{% endif %}" data-url="{% url 'mejor_amigo' persona.username %}"
+            title="{% if es_mejor %}Quitar de mejores amigos{% else %}Añadir a mejores amigos{% endif %}">
+        <i class="bi {% if es_mejor %}bi-star-fill{% else %}bi-plus-lg{% endif %}"></i>
+    </button>
+</div>
