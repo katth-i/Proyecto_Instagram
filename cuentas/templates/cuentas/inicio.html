@@ -16,6 +16,11 @@
                     <strong>{{ publicacion.user.username }}</strong>
                 </a>
                 <span class="tiempo">hace {{ publicacion.creado_el|timesince }}</span>
+                {% if publicacion.user != request.user %}
+                    <button type="button" class="btn-mas js-reportar" data-url="{% url 'reportar' publicacion.id %}" title="Reportar publicación">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                {% endif %}
             </div>
 
             <a href="{% url 'publicacion' publicacion.id %}"><img src="{{ publicacion.imagen.url }}" alt="Foto de {{ publicacion.user.username }}"></a>
@@ -38,7 +43,10 @@
                 </a>
 
                 <i class="bi bi-send"></i>
-                <i class="bi bi-bookmark guardar"></i>
+                <button type="button" class="btn-guardar js-guardar guardar" data-url="{% url 'guardar' publicacion.id %}"
+                        title="{% if publicacion.id in mis_guardados %}Quitar de guardados{% else %}Guardar{% endif %}">
+                    <i class="bi {% if publicacion.id in mis_guardados %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                </button>
             </div>
 
             <p class="descripcion">
@@ -83,6 +91,12 @@
     .acciones i { cursor: pointer; }
     .acciones i:hover { color: var(--rosa); }
     .acciones .guardar { margin-left: auto; }
+    .btn-guardar, .btn-mas { background: none; border: none; cursor: pointer; color: inherit; padding: 0; font-size: inherit; line-height: 1; }
+    .btn-guardar .bi-bookmark-fill { color: var(--rosa); }
+    .btn-mas { font-size: 20px !important; color: var(--texto-suave); padding: 4px 6px; border-radius: 8px; }
+    .btn-mas i { font-size: 20px !important; color: inherit !important; }
+    .btn-mas:hover { background: var(--rosa-suave); color: var(--texto); }
+    .tiempo + .btn-mas { margin-left: 4px; }
     .descripcion { margin: 4px 0; font-size: 14px; }
     .vacio { text-align: center; color: var(--texto-suave); margin-top: 80px; }
     .vacio i { font-size: 70px; color: var(--rosa); }

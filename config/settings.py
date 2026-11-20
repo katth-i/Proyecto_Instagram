@@ -80,6 +80,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cuentas.context_processors.notificaciones_no_leidas',  # círculo rojo de notificaciones
+                'cuentas.context_processors.reportes_pendientes',       # contador de Moderación
             ],
         },
     },

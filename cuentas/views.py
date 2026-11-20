@@ -12,7 +12,7 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 from .forms import RegistroForm, PublicacionForm, UsuarioEditForm, PerfilEditForm
-from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento
+from .models import Publicacion, Comentario, Notificacion, Perfil, Seguimiento, Guardado, Reporte
 
 
 def _es_ajax(request):
@@ -97,8 +97,12 @@ def login_view(request):
 @login_required
 def inicio(request):
     # Obtenemos todas las publicaciones de la base de datos (ordenadas de la más nueva a la más vieja)
-    publicaciones = Publicacion.objects.all().order_by('-id')
-    return render(request, 'cuentas/inicio.html', {'publicaciones': publicaciones})
+    # Las publicaciones ocultas por moderación no aparecen en el feed
+    publicaciones = Publicacion.objects.filter(oculta=False).order_by('-id')
+    return render(request, 'cuentas/inicio.html', {
+        'publicaciones': publicaciones,
+        'mis_guardados': set(request.user.guardados.values_list('publicacion_id', flat=True)),
+    })
 
 
 @never_cache
@@ -205,6 +209,9 @@ def ver_perfil(request, username):
                   num_comentarios=Count('comentarios', distinct=True))
         .order_by('-creado_el')
     )
+    # Las publicaciones ocultas por moderación solo las ve su autor
+    if request.user != usuario:
+        publicaciones = publicaciones.filter(oculta=False)
 
     contexto = {
         'usuario_perfil': usuario,
@@ -346,12 +353,17 @@ def ver_publicacion(request, publicacion_id):
     publicacion = get_object_or_404(
         Publicacion.objects.select_related('user', 'user__perfil'), id=publicacion_id
     )
+    if publicacion.oculta and publicacion.user != request.user and not request.user.is_staff:
+        messages.error(request, 'Esta publicación no está disponible.')
+        return redirect('inicio')
     comentarios = publicacion.comentarios.select_related('user', 'user__perfil').order_by('creado_el')
     return render(request, 'cuentas/publicacion.html', {
         'publicacion': publicacion,
         'comentarios': comentarios,
         'le_di_like': publicacion.likes.filter(pk=request.user.pk).exists(),
         'es_mia': publicacion.user == request.user,
+        'mis_guardados': set(request.user.guardados.filter(publicacion=publicacion).values_list('publicacion_id', flat=True)),
+        'ya_reporte': publicacion.reportes.filter(usuario=request.user).exists(),
     })
 
 
@@ -430,3 +442,123 @@ def estado_publicaciones(request):
             'comentarios': [_comentario_json(c) for c in ultimos],
         }
     return JsonResponse({'publicaciones': datos})
+
+
+# ======================= GUARDAR PUBLICACIONES =======================
+
+@login_required
+@require_POST
+def guardar_publicacion(request, publicacion_id):
+    """Guardar / quitar de guardados (🔖). Responde JSON si lo pide el JavaScript."""
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id)
+    guardado = Guardado.objects.filter(user=request.user, publicacion=publicacion)
+    if guardado.exists():
+        guardado.delete()
+        esta_guardada = False
+    else:
+        Guardado.objects.create(user=request.user, publicacion=publicacion)
+        esta_guardada = True
+    if _es_ajax(request):
+        return JsonResponse({'guardada': esta_guardada})
+    return _volver(request, reverse('inicio') + f'#pub-{publicacion.id}')
+
+
+@never_cache
+@login_required
+def ver_guardados(request):
+    """Colección privada de publicaciones guardadas."""
+    guardados = (Guardado.objects.filter(user=request.user, publicacion__oculta=False)
+                 .select_related('publicacion')
+                 .annotate(num_likes=Count('publicacion__likes', distinct=True),
+                           num_comentarios=Count('publicacion__comentarios', distinct=True))
+                 .order_by('-creado_el'))
+    return render(request, 'cuentas/guardados.html', {'guardados': guardados})
+
+
+# ======================= REPORTAR PUBLICACIONES =======================
+
+REPORTES_PARA_OCULTAR = 3   # con 3 reportes de personas distintas se oculta sola
+
+
+@login_required
+@require_POST
+def reportar_publicacion(request, publicacion_id):
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id)
+    motivo = request.POST.get('motivo', '')
+    motivos_validos = dict(Reporte.MOTIVOS)
+
+    if publicacion.user == request.user:
+        respuesta, estado = {'ok': False, 'mensaje': 'No puedes reportar tu propia publicación.'}, 400
+    elif motivo not in motivos_validos:
+        respuesta, estado = {'ok': False, 'mensaje': 'Elige un motivo.'}, 400
+    elif Reporte.objects.filter(publicacion=publicacion, usuario=request.user).exists():
+        respuesta, estado = {'ok': True, 'mensaje': 'Ya habías reportado esta publicación. Los moderadores la revisarán.'}, 200
+    else:
+        Reporte.objects.create(
+            publicacion=publicacion, usuario=request.user, motivo=motivo,
+            detalle=(request.POST.get('detalle') or '').strip()[:300],
+        )
+        pendientes = publicacion.reportes.filter(estado='pendiente').count()
+        if pendientes >= REPORTES_PARA_OCULTAR and not publicacion.oculta:
+            publicacion.oculta = True
+            publicacion.save(update_fields=['oculta'])
+        respuesta, estado = {'ok': True, 'mensaje': 'Gracias por avisarnos. Los moderadores revisarán la publicación.'}, 200
+
+    if _es_ajax(request):
+        return JsonResponse(respuesta, status=estado)
+    (messages.success if respuesta['ok'] else messages.error)(request, respuesta['mensaje'])
+    return _volver(request, reverse('inicio'))
+
+
+# ======================= MODERACIÓN (solo moderadores) =======================
+
+def _solo_moderadores(vista):
+    def envoltura(request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'Solo los moderadores pueden entrar a esa página.')
+            return redirect('inicio')
+        return vista(request, *args, **kwargs)
+    return envoltura
+
+
+@never_cache
+@login_required
+@_solo_moderadores
+def moderacion(request):
+    """Publicaciones con reportes pendientes, la más reportada primero."""
+    publicaciones = (Publicacion.objects.filter(reportes__estado='pendiente')
+                     .select_related('user')
+                     .annotate(num_reportes=Count('reportes', filter=Q(reportes__estado='pendiente'), distinct=True))
+                     .order_by('-num_reportes', '-id').distinct())
+    casos = []
+    for p in publicaciones:
+        reportes = p.reportes.filter(estado='pendiente').select_related('usuario').order_by('creado_el')
+        motivos = {}
+        for r in reportes:
+            motivos[r.get_motivo_display()] = motivos.get(r.get_motivo_display(), 0) + 1
+        casos.append({'publicacion': p, 'reportes': reportes, 'motivos': motivos})
+    return render(request, 'cuentas/moderacion.html', {'casos': casos})
+
+
+@login_required
+@require_POST
+@_solo_moderadores
+def moderar_publicacion(request, publicacion_id):
+    publicacion = get_object_or_404(Publicacion, id=publicacion_id)
+    accion = request.POST.get('accion')
+    pendientes = publicacion.reportes.filter(estado='pendiente')
+    if accion == 'eliminar':
+        publicacion.imagen.delete(save=False)
+        publicacion.delete()   # sus reportes se borran con ella
+        messages.success(request, 'Publicación eliminada.')
+    elif accion == 'ocultar':
+        publicacion.oculta = True
+        publicacion.save(update_fields=['oculta'])
+        pendientes.update(estado='resuelto')
+        messages.success(request, 'Publicación ocultada. Solo su autor y los moderadores pueden verla.')
+    elif accion == 'descartar':
+        publicacion.oculta = False   # si se había ocultado sola, vuelve a mostrarse
+        publicacion.save(update_fields=['oculta'])
+        pendientes.update(estado='descartado')
+        messages.success(request, 'Reportes descartados. La publicación sigue visible.')
+    return redirect('moderacion')

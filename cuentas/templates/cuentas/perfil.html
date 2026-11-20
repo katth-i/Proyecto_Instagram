@@ -64,6 +64,9 @@
     <!-- ===== PESTAÑA ===== -->
     <div class="perfil-tabs">
         <span class="activa"><i class="bi bi-grid-3x3"></i> PUBLICACIONES</span>
+        {% if es_mi_perfil %}
+            <a href="{% url 'guardados' %}"><i class="bi bi-bookmark"></i> GUARDADOS</a>
+        {% endif %}
     </div>
 
     <!-- ===== CUADRÍCULA DE FOTOS ===== -->
@@ -79,6 +82,7 @@
             {% for publicacion in publicaciones %}
                 <a href="{% url 'publicacion' publicacion.id %}" class="celda">
                     <img src="{{ publicacion.imagen.url }}" alt="Publicación de {{ usuario_perfil.username }}">
+                    {% if publicacion.oculta %}<span class="etiqueta-oculta"><i class="bi bi-eye-slash"></i> Oculta</span>{% endif %}
                     <!-- Capa que aparece al pasar el mouse -->
                     <div class="celda-capa">
                         <span><i class="bi bi-heart-fill"></i> {{ publicacion.num_likes }}</span>
@@ -136,7 +140,11 @@
     .perfil-bio { margin: 0; font-size: 14px; }
 
     /* Pestaña */
-    .perfil-tabs { border-top: 1px solid var(--borde); display: flex; justify-content: center; }
+    .perfil-tabs { border-top: 1px solid var(--borde); display: flex; justify-content: center; gap: 50px; }
+    .perfil-tabs a { padding: 14px 0; font-size: 12px; letter-spacing: 1px; color: var(--texto-suave); text-decoration: none; }
+    .perfil-tabs a:hover { color: var(--texto); }
+    .etiqueta-oculta { position: absolute; top: 8px; left: 8px; background: rgba(224, 69, 95, .9); color: #fff;
+                       font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 20px; }
     .perfil-tabs span { padding: 14px 0; font-size: 12px; letter-spacing: 1px; color: var(--texto-suave); }
     .perfil-tabs .activa { color: var(--rosa); border-top: 2px solid var(--rosa); margin-top: -1px; font-weight: bold; }
 

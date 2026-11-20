@@ -29,9 +29,17 @@
                         {% csrf_token %}
                         <button type="submit" class="btn-eliminar" title="Eliminar publicación"><i class="bi bi-trash3"></i></button>
                     </form>
+                {% else %}
+                    <button type="button" class="btn-eliminar js-reportar" data-url="{% url 'reportar' publicacion.id %}"
+                            {% if ya_reporte %}data-ya="1"{% endif %} title="Reportar publicación">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
                 {% endif %}
             </header>
 
+            {% if publicacion.oculta %}
+                <p class="aviso-oculta"><i class="bi bi-eye-slash"></i> Esta publicación está oculta por reportes. Solo la ven su autor y los moderadores.</p>
+            {% endif %}
             <div class="pub-comentarios js-scroll-comentarios">
                 {% if publicacion.descripcion %}
                     <p class="comentario"><strong>{{ publicacion.user.username }}</strong> {{ publicacion.descripcion|linebreaksbr }}</p>
@@ -60,6 +68,9 @@
                     {% endif %}
                 </a>
                 <a href="#" class="accion" onclick="document.getElementById('comentario-detalle').focus(); return false;"><i class="bi bi-chat"></i></a>
+                <button type="button" class="accion btn-guardar js-guardar" data-url="{% url 'guardar' publicacion.id %}" title="Guardar">
+                    <i class="bi {% if publicacion.id in mis_guardados %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                </button>
                 <span class="contador"><strong class="js-likes">{{ publicacion.total_likes }}</strong> me gusta</span>
                 <span class="fecha">hace {{ publicacion.creado_el|timesince }}</span>
             </div>
@@ -100,6 +111,9 @@
     .accion { color: var(--texto); font-size: 24px; text-decoration: none; }
     .accion:hover { color: var(--rosa); }
     .contador { font-size: 14px; }
+    .btn-guardar { background: none; border: none; cursor: pointer; padding: 0; font-size: 24px; color: var(--texto); }
+    .btn-guardar .bi-bookmark-fill { color: var(--rosa); }
+    .aviso-oculta { background: #fde2e6; color: var(--rojo); padding: 8px 12px; font-size: 13px; }
     .fecha { margin-left: auto; color: var(--texto-suave); font-size: 12px; }
     .pub-form { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--borde); }
     .pub-form input[type="text"] { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: var(--texto); font-family: inherit; }

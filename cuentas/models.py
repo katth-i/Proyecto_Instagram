@@ -31,6 +31,9 @@ class Publicacion(models.Model):
     # Fecha y hora automática de cuándo se creó
     creado_el = models.DateTimeField(auto_now_add=True)
 
+    # Oculta por moderación (o automáticamente al recibir varios reportes)
+    oculta = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.username} - {self.creado_el.strftime('%d/%m/%Y')}" 
 
@@ -72,3 +75,47 @@ class Seguimiento(models.Model):
 
     def __str__(self):
         return f"{self.seguidor.username} sigue a {self.seguido.username}"
+
+
+
+class Guardado(models.Model):
+    """Publicación que un usuario guardó (🔖). Solo la ve ese usuario."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='guardados')
+    publicacion = models.ForeignKey(Publicacion, on_delete=models.CASCADE, related_name='guardada_por')
+    creado_el = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'publicacion'], name='guardado_unico')]
+
+    def __str__(self):
+        return f"{self.user.username} guardó la publicación {self.publicacion_id}"
+
+
+class Reporte(models.Model):
+    """Reporte de una publicación. Lo revisan los moderadores."""
+    MOTIVOS = [
+        ('spam', 'Spam o publicidad'),
+        ('inapropiado', 'Desnudos o contenido inapropiado'),
+        ('acoso', 'Acoso o bullying'),
+        ('violencia', 'Violencia u odio'),
+        ('falso', 'Información falsa'),
+        ('otro', 'Otro motivo'),
+    ]
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('resuelto', 'Resuelto (se tomó acción)'),
+        ('descartado', 'Descartado (no había problema)'),
+    ]
+    publicacion = models.ForeignKey(Publicacion, on_delete=models.CASCADE, related_name='reportes')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reportes_hechos')
+    motivo = models.CharField(max_length=20, choices=MOTIVOS)
+    detalle = models.CharField(max_length=300, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
+    creado_el = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Cada persona puede reportar una misma publicación una sola vez
+        constraints = [models.UniqueConstraint(fields=['publicacion', 'usuario'], name='reporte_unico')]
+
+    def __str__(self):
+        return f"Reporte de {self.usuario.username} a la publicación {self.publicacion_id} ({self.get_motivo_display()})"

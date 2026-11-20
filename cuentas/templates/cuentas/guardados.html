@@ -1,0 +1,53 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Guardados - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="guardados-pagina">
+    <div class="cabecera">
+        <a href="{% url 'perfil' user.username %}" class="volver"><i class="bi bi-arrow-left"></i></a>
+        <div>
+            <h2><i class="bi bi-bookmark-fill"></i> Guardados</h2>
+            <p>Solo tú puedes ver lo que guardaste.</p>
+        </div>
+    </div>
+
+    {% if guardados %}
+        <div class="cuadricula">
+            {% for g in guardados %}
+                <a href="{% url 'publicacion' g.publicacion.id %}" class="celda">
+                    <img src="{{ g.publicacion.imagen.url }}" alt="Publicación guardada">
+                    <div class="celda-capa">
+                        <span><i class="bi bi-heart-fill"></i> {{ g.num_likes }}</span>
+                        <span><i class="bi bi-chat-fill"></i> {{ g.num_comentarios }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="vacio">
+            <i class="bi bi-bookmark"></i>
+            <h3>Todavía no guardaste nada</h3>
+            <p>Toca el ícono <i class="bi bi-bookmark"></i> de una publicación para guardarla aquí.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .guardados-pagina { width: 100%; max-width: 935px; }
+    .cabecera { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .cabecera h2 { margin: 0; color: var(--texto); }
+    .cabecera h2 i { color: var(--rosa); }
+    .cabecera p { margin: 2px 0 0; color: var(--texto-suave); font-size: 13px; }
+    .volver { color: var(--texto); font-size: 22px; }
+    .cuadricula { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .celda { position: relative; aspect-ratio: 1 / 1; overflow: hidden; background: var(--rosa-suave); }
+    .celda img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .celda-capa { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 24px;
+                  background: rgba(74, 43, 58, 0.45); color: #fff; font-weight: bold; font-size: 17px; opacity: 0; transition: opacity .2s; }
+    .celda:hover .celda-capa { opacity: 1; }
+    .vacio { text-align: center; color: var(--texto-suave); margin-top: 60px; }
+    .vacio > i { font-size: 60px; color: var(--rosa); }
+    .vacio h3 { color: var(--texto); }
+</style>
+{% endblock %}

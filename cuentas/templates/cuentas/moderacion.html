@@ -1,0 +1,90 @@
+{% extends 'cuentas/base.html' %}
+
+{% block titulo %}Moderación - Fotitos{% endblock %}
+
+{% block contenido %}
+<div class="mod-pagina">
+    <h2><i class="bi bi-shield-check"></i> Moderación</h2>
+    <p class="intro">Publicaciones reportadas por la comunidad. Con {{ 3 }} reportes se ocultan solas hasta que las revises.</p>
+
+    {% if messages %}
+        {% for message in messages %}<div class="aviso aviso-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    {% endif %}
+
+    {% for caso in casos %}
+        {% with p=caso.publicacion %}
+        <article class="caso">
+            <a href="{% url 'publicacion' p.id %}" class="caso-foto"><img src="{{ p.imagen.url }}" alt=""></a>
+            <div class="caso-info">
+                <p class="caso-autor">
+                    Publicado por <a href="{% url 'perfil' p.user.username %}"><strong>{{ p.user.username }}</strong></a>
+                    · hace {{ p.creado_el|timesince }}
+                    {% if p.oculta %}<span class="estado-oculta"><i class="bi bi-eye-slash"></i> Oculta</span>{% endif %}
+                </p>
+                {% if p.descripcion %}<p class="caso-desc">"{{ p.descripcion|truncatechars:120 }}"</p>{% endif %}
+
+                <p class="caso-total"><i class="bi bi-flag-fill"></i> {{ p.num_reportes }} reporte{{ p.num_reportes|pluralize }}</p>
+                <div class="motivos">
+                    {% for motivo, cantidad in caso.motivos.items %}<span class="motivo">{{ motivo }} · {{ cantidad }}</span>{% endfor %}
+                </div>
+                <details>
+                    <summary>Ver quién reportó</summary>
+                    <ul>
+                        {% for r in caso.reportes %}
+                            <li><strong>{{ r.usuario.username }}</strong>: {{ r.get_motivo_display }}{% if r.detalle %} — "{{ r.detalle }}"{% endif %}
+                                <span class="hace">hace {{ r.creado_el|timesince }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </details>
+
+                <form action="{% url 'moderar_publicacion' p.id %}" method="post" class="acciones-mod">
+                    {% csrf_token %}
+                    <button name="accion" value="descartar" class="btn-mod btn-ok"><i class="bi bi-check-lg"></i> No hay problema</button>
+                    <button name="accion" value="ocultar" class="btn-mod"><i class="bi bi-eye-slash"></i> Ocultar</button>
+                    <button name="accion" value="eliminar" class="btn-mod btn-peligro"
+                            onclick="return confirm('¿Eliminar esta publicación para siempre?');"><i class="bi bi-trash3"></i> Eliminar</button>
+                </form>
+            </div>
+        </article>
+        {% endwith %}
+    {% empty %}
+        <div class="vacio">
+            <i class="bi bi-emoji-smile"></i>
+            <h3>Todo en orden</h3>
+            <p>No hay reportes pendientes. 🎉</p>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+    .mod-pagina { width: 100%; max-width: 760px; }
+    .mod-pagina h2 { margin: 0; }
+    .mod-pagina h2 i { color: var(--rosa); }
+    .intro { color: var(--texto-suave); font-size: 14px; margin: 4px 0 18px; }
+    .aviso { padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 14px; }
+    .aviso-success { background: var(--rosa-suave); color: var(--rosa-oscuro); }
+    .aviso-error { background: #fde2e6; color: var(--rojo); }
+    .caso { display: flex; gap: 18px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .caso-foto img { width: 150px; height: 150px; object-fit: cover; border-radius: 10px; display: block; }
+    .caso-info { flex: 1; min-width: 0; font-size: 14px; }
+    .caso-info p { margin: 0 0 6px; }
+    .caso-autor a { color: inherit; text-decoration: none; }
+    .caso-desc { color: var(--texto-suave); font-style: italic; }
+    .caso-total { color: var(--rojo); font-weight: bold; }
+    .estado-oculta { margin-left: 6px; background: #fde2e6; color: var(--rojo); padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .motivos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .motivo { background: var(--rosa-suave); color: var(--rosa-oscuro); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    details { margin-bottom: 10px; color: var(--texto-suave); }
+    details summary { cursor: pointer; font-size: 13px; }
+    details ul { margin: 6px 0 0; padding-left: 18px; color: var(--texto); }
+    .hace { color: var(--texto-suave); font-size: 11px; margin-left: 4px; }
+    .acciones-mod { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn-mod { padding: 8px 14px; border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 13px; }
+    .btn-mod:hover { background: var(--rosa-suave); }
+    .btn-ok { border-color: #9ad9b0; color: #237a45; }
+    .btn-peligro { border-color: #f3a5b3; color: var(--rojo); }
+    .vacio { text-align: center; color: var(--texto-suave); margin-top: 60px; }
+    .vacio > i { font-size: 60px; color: var(--rosa); }
+    .vacio h3 { color: var(--texto); }
+</style>
+{% endblock %}
