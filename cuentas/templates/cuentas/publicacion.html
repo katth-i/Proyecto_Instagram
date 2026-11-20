@@ -122,5 +122,10 @@
         .pub-card { grid-template-columns: 1fr; }
         .pub-lado { border-left: none; border-top: 1px solid var(--borde); }
     }
+
+    @media (max-width: 767px) {
+        .pub-card { min-height: 0; border-radius: 12px; }
+        .pub-comentarios { max-height: none; }
+    }
 </style>
 {% endblock %}

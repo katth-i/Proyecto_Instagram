@@ -286,5 +286,20 @@
     .vacio i { font-size: 60px; color: var(--rosa); }
     .vacio h3 { color: var(--texto); }
     .vacio a { color: var(--rosa); font-weight: bold; }
+
+    /* ---- Celular ---- */
+    @media (max-width: 767px) {
+        .perfil-cabecera { gap: 18px; padding: 8px 6px 20px; align-items: flex-start; }
+        .perfil-foto { width: 86px; height: 86px; padding: 3px; }
+        .perfil-foto i { font-size: 70px; }
+        .perfil-fila { gap: 8px; }
+        .perfil-fila h2 { font-size: 19px; width: 100%; }
+        .perfil-stats { gap: 14px; margin: 12px 0; font-size: 13px; flex-wrap: wrap; }
+        .perfil-tabs { gap: 30px; }
+        .cuadricula { gap: 2px; }
+        .celda-nueva i { font-size: 34px; }
+        .celda-nueva span { font-size: 11px; }
+        .celda-capa { display: none; }
+    }
 </style>
 {% endblock %}

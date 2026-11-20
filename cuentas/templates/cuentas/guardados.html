@@ -49,5 +49,10 @@
     .vacio { text-align: center; color: var(--texto-suave); margin-top: 60px; }
     .vacio > i { font-size: 60px; color: var(--rosa); }
     .vacio h3 { color: var(--texto); }
+
+    @media (max-width: 767px) {
+        .cuadricula { gap: 2px; }
+        .celda-capa { display: none; }
+    }
 </style>
 {% endblock %}

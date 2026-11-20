@@ -86,5 +86,10 @@
     .vacio { text-align: center; color: var(--texto-suave); margin-top: 60px; }
     .vacio > i { font-size: 60px; color: var(--rosa); }
     .vacio h3 { color: var(--texto); }
+
+    @media (max-width: 767px) {
+        .caso { flex-direction: column; }
+        .caso-foto img { width: 100%; height: 220px; }
+    }
 </style>
 {% endblock %}

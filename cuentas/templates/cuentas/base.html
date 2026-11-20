@@ -151,6 +151,51 @@ body {
     display: flex;
     justify-content: center;  /* centra el muro */
 }
+
+/* ===================== DISEÑO RESPONSIVO ===================== */
+.barra-movil, .barra-inferior { display: none; }
+
+/* Tablet: el menú lateral se vuelve solo íconos */
+@media (max-width: 1100px) and (min-width: 768px) {
+    .sidebar { width: 76px; padding: 25px 10px; align-items: center; }
+    .logo { font-size: 0; margin: 0 0 30px; }
+    .logo a::before { content: 'F'; font-size: 30px; }
+    .menu a { font-size: 0; justify-content: center !important; padding: 12px; position: relative; }
+    .menu a > span:first-child { font-size: 0; gap: 0 !important; }
+    .menu a .badge-notis { position: absolute; top: 4px; right: 2px; font-size: 10px; }
+    .usuario-link { font-size: 0; justify-content: center; }
+    .btn-salir { font-size: 0; padding: 8px; }
+    .btn-salir::before { content: '⎋'; font-size: 16px; }
+    .usuario { padding: 12px 0; }
+    .contenido { margin-left: 76px; }
+    .menu .burbuja-notis { left: calc(100% + 14px); }
+}
+
+/* Celular: barra arriba + barra abajo, como la app de Instagram */
+@media (max-width: 767px) {
+    .sidebar { display: none; }
+    .barra-movil { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 90;
+                   height: 56px; padding: 0 14px; background: var(--tarjeta); border-bottom: 1px solid var(--borde); }
+    .logo-movil { font-family: 'Pacifico', cursive; font-size: 26px; color: var(--rosa); text-decoration: none; }
+    .barra-movil-iconos { display: flex; align-items: center; gap: 18px; }
+    .barra-movil-iconos a, .btn-salir-movil { color: var(--texto); font-size: 24px; background: none; border: none; padding: 0; cursor: pointer; line-height: 1; }
+    .icono-con-badge { position: relative; }
+    .badge-mini { position: absolute; top: -6px; right: -10px; min-width: 18px; height: 18px; font-size: 10px; }
+    .barra-inferior { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; right: 0;
+                      z-index: 90; height: 56px; background: var(--tarjeta); border-top: 1px solid var(--borde);
+                      padding-bottom: env(safe-area-inset-bottom); }
+    .barra-inferior a { color: var(--texto); font-size: 25px; padding: 8px 12px; line-height: 1; }
+    .avatar-barra { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; }
+    .contenido { margin-left: 0; padding: 12px 8px 76px; }
+    /* Campos con letra de 16px para que el iPhone no haga zoom al escribir */
+    input, textarea, select { font-size: 16px !important; }
+    /* Avisos y ventanas ocupan el ancho del teléfono */
+    .avisos { left: 12px; right: 12px; bottom: 70px; }
+    .aviso-noti { width: 100%; }
+    .aviso-simple { bottom: 70px; width: calc(100% - 32px); text-align: center; }
+    .modal-caja, .modal-reporte { width: calc(100vw - 32px); max-width: 380px; }
+    .menu .burbuja-notis { display: none !important; }
+}
     </style>
 </head>
 <body>
@@ -168,7 +213,7 @@ body {
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <i class="bi bi-heart"></i> Notificaciones
                     </div>
-                    <span id="badge-notis" class="badge-notis" {% if not notificaciones_no_leidas %}hidden{% endif %}>{{ notificaciones_no_leidas }}</span>
+                    <span id="badge-notis" class="badge-notis js-badge-notis" {% if not notificaciones_no_leidas %}hidden{% endif %}>{{ notificaciones_no_leidas }}</span>
                 </a>
                 <!-- Burbuja estilo Instagram: ❤️ 2  👤 1  💬 3 -->
                 <a href="{% url 'notificaciones' %}" id="burbuja-notis" class="burbuja-notis" hidden title="Ver notificaciones">
@@ -204,6 +249,38 @@ body {
                 <button type="submit" class="btn-salir">Cerrar sesión</button>
             </form>
         </div>
+    </nav>
+
+    <!-- ===== CELULAR: barra superior ===== -->
+    <header class="barra-movil">
+        <a href="{% url 'inicio' %}" class="logo-movil">Fotitos</a>
+        <div class="barra-movil-iconos">
+            {% if user.is_staff %}
+                <a href="{% url 'moderacion' %}" title="Moderación" class="icono-con-badge">
+                    <i class="bi bi-shield-check"></i>
+                    {% if reportes_pendientes %}<span class="badge-notis badge-mini">{{ reportes_pendientes }}</span>{% endif %}
+                </a>
+            {% endif %}
+            <a href="{% url 'notificaciones' %}" title="Notificaciones" class="icono-con-badge">
+                <i class="bi bi-heart"></i>
+                <span class="badge-notis badge-mini js-badge-notis" {% if not notificaciones_no_leidas %}hidden{% endif %}>{{ notificaciones_no_leidas }}</span>
+            </a>
+            <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" title="Cerrar sesión" class="btn-salir-movil"><i class="bi bi-box-arrow-right"></i></button>
+            </form>
+        </div>
+    </header>
+
+    <!-- ===== CELULAR: barra inferior ===== -->
+    <nav class="barra-inferior">
+        <a href="{% url 'inicio' %}" title="Inicio"><i class="bi bi-house-door{% if request.resolver_match.url_name == 'inicio' %}-fill{% endif %}"></i></a>
+        <a href="{% url 'buscar' %}" title="Búsqueda"><i class="bi bi-search"></i></a>
+        <a href="{% url 'crear' %}" title="Crear"><i class="bi bi-plus-square"></i></a>
+        <a href="{% url 'guardados' %}" title="Guardados"><i class="bi bi-bookmark"></i></a>
+        <a href="{% url 'perfil' user.username %}" title="Perfil">
+            {% if user.perfil.foto %}<img src="{{ user.perfil.foto.url }}" alt="" class="avatar-barra">{% else %}<i class="bi bi-person-circle"></i>{% endif %}
+        </a>
     </nav>
 
     <!-- Ventana para confirmar "dejar de seguir" -->
@@ -280,7 +357,7 @@ body {
     (function () {
         const URL_ESTADO = "{% url 'estado_notificaciones' %}";
         const URL_NOTIS = "{% url 'notificaciones' %}";
-        const badge = document.getElementById('badge-notis');
+        const badges = document.querySelectorAll('.js-badge-notis');
         const avisos = document.getElementById('avisos');
         const enNotificaciones = window.location.pathname === URL_NOTIS;
         let ultimoId = 0;
@@ -370,8 +447,7 @@ body {
                 ultimoId = datos.ultimo_id;
                 actualizarBurbuja(enNotificaciones ? null : datos.por_tipo);
                 const total = enNotificaciones ? 0 : datos.no_leidas;
-                badge.textContent = total > 9 ? '9+' : total;
-                badge.hidden = total === 0;
+                badges.forEach(b => { b.textContent = total > 9 ? '9+' : total; b.hidden = total === 0; });
                 document.title = (total ? '(' + total + ') ' : '') + document.title.replace(/^\(\d+\+?\) /, '');
             } catch (e) { /* sin conexión: se intenta de nuevo luego */ }
         }
